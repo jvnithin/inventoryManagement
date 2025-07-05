@@ -281,7 +281,7 @@ export default function WholesalerProducts({ route, navigation }) {
           <TouchableOpacity
             onPress={() => {
               setToastVisible(false);
-              navigation.navigate('Cart');
+              navigation.navigate('Cart',{wholesaler});
             }}
             style={{
               backgroundColor: colors.toastBtnBg,
