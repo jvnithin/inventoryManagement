@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,6 @@ import {
   Share,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import FloatingActionButton from '../../../components/FloatingActionButton';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 import { useAppContext } from '../../../context/AppContext';
 import { useColorScheme } from 'nativewind';
 
@@ -21,11 +18,10 @@ const fallbackImage =
   'https://ui-avatars.com/api/?background=16A34A&color=fff&name=R';
 
 export default function RetailerList({ navigation }) {
-  const { apiUrl, user } = useAppContext();
+  const { user, retailers, fetchRetailers } = useAppContext();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const [retailers, setRetailers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -40,32 +36,27 @@ export default function RetailerList({ navigation }) {
     } catch {}
   };
 
-  const fetchRetailers = async () => {
+  const loadRetailers = useCallback(async () => {
     setError(null);
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem('token');
-      const { data } = await axios.get(`${apiUrl}/api/wholesaler/get-retailers`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setRetailers(data || []);
+      await fetchRetailers();
     } catch {
       setError('Failed to load retailers. Please try again.');
-      setRetailers([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [fetchRetailers]);
 
   useEffect(() => {
-    fetchRetailers();
-  }, []);
+    loadRetailers();
+  }, [loadRetailers]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchRetailers();
-  }, []);
+    loadRetailers();
+  }, [loadRetailers]);
 
   const renderRetailer = ({ item }) => (
     <TouchableOpacity
@@ -142,7 +133,7 @@ export default function RetailerList({ navigation }) {
         <Text className={`mt-4 text-center ${errorText}`}>{error}</Text>
         <TouchableOpacity
           className="mt-6 bg-green-700 px-6 py-3 rounded-xl"
-          onPress={fetchRetailers}
+          onPress={loadRetailers}
         >
           <Text className="text-white font-semibold">Retry</Text>
         </TouchableOpacity>

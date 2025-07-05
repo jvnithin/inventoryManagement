@@ -17,8 +17,8 @@ import { useColorScheme } from 'nativewind';
 const fallbackImage = 'https://ui-avatars.com/api/?background=16A34A&color=fff&name=R';
 
 export default function RetailerDetails({ route, navigation }) {
-  const { apiUrl } = useAppContext();
   const { retailer } = route.params;
+  const { orders, fetchOrders, apiUrl } = useAppContext();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -31,8 +31,16 @@ export default function RetailerDetails({ route, navigation }) {
   const [zip, setZip] = useState(retailer.address?.zip || '');
   const [photo, setPhoto] = useState(retailer.photo);
 
-  const totalOrders = retailer.ordersCount ?? 0;
-  const totalValue = retailer.totalValue ?? 0;
+  // --- CENTRAL: Filter orders for this retailer/customer ---
+  console.log(orders);
+  console.log(retailer.user_id);
+  const retailerOrders = orders.filter(order => String(order.user_id) === String(retailer.user_id));
+  console.log(retailerOrders);
+  const totalOrders = retailerOrders.length;
+  const totalValue = retailerOrders.reduce((sum, order) =>
+    sum + (order.order_items ? order.order_items.price * order.order_items.quantity : 0),
+    0
+  );
 
   const handleSaveRetailer = async () => {
     try {
@@ -50,6 +58,11 @@ export default function RetailerDetails({ route, navigation }) {
     }
   };
 
+  useEffect(() => {
+    fetchOrders(); // Always fetch latest orders on mount
+    // eslint-disable-next-line
+  }, []);
+
   // Color tokens
   const bg = isDark ? 'bg-gray-900' : 'bg-gray-50';
   const cardBg = isDark ? 'bg-gray-800' : 'bg-white';
@@ -59,17 +72,9 @@ export default function RetailerDetails({ route, navigation }) {
   const inputBorder = isDark ? 'border-gray-600' : 'border-gray-200';
   const accent = '#16A34A';
 
-  // Sample orders (replace with dynamic if available)
-  const orders = retailer.ordersSample || [
-    { id: 'O001', date: '2025-06-28', items: ['Organic Apples','Green Tea'], value: 500 },
-    { id: 'O002', date: '2025-06-30', items: ['Almonds','Natural Honey'], value: 850 },
-    { id: 'O003', date: '2025-07-01', items: ['Almonds'], value: 450 },
-  ];
-
   return (
     <View className={`${bg} flex-1`}>
       <StatusBar backgroundColor={accent} barStyle={isDark ? 'light-content' : 'dark-content'} />
-
       <SafeAreaView className={`${bg} flex-1`}>
         {/* Header */}
         <View className="flex-row items-center px-4 pt-4 pb-3" style={{
@@ -175,26 +180,29 @@ export default function RetailerDetails({ route, navigation }) {
           <Text className="text-lg font-bold mb-3" style={{ color: accent }}>
             Recent Orders
           </Text>
-          {orders.map(o => (
+          {retailerOrders.length === 0 && (
+            <Text className={`text-center ${label}`}>No orders for this retailer.</Text>
+          )}
+          {retailerOrders.map((order) => (
             <View
-              key={o.id}
+              key={order.order_id}
               className={`${cardBg} rounded-lg p-4 mb-3 border ${
                 isDark ? 'border-gray-700' : 'border-gray-200'
               }`}
             >
               <Text className="font-semibold mb-1" style={{ color: accent }}>
-                {o.date}
+                {order.created_at ? new Date(order.created_at).toLocaleDateString() : ''}
               </Text>
               <Text className={`text-sm ${label} mb-1`}>
                 Items:{' '}
                 <Text className={`font-medium ${text}`}>
-                  {o.items.join(', ')}
+                  {order.order_items ? order.order_items.name : ''} x {order.order_items ? order.order_items.quantity : ''}
                 </Text>
               </Text>
               <View className="flex-row items-center">
                 <Icon name="pricetag" size={16} color={accent} />
                 <Text className="ml-1 font-bold" style={{ color: accent }}>
-                  ₹{o.value}
+                  ₹{order.order_items ? order.order_items.price * order.order_items.quantity : 0}
                 </Text>
               </View>
             </View>

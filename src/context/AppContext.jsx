@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { on } from '../services/socketService';
 
 const AppContext = createContext();
 
@@ -10,7 +11,23 @@ export const AppProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [storedProducts, setStoredProducts] = useState([]);
   const [retailerCart, setRetailerCart] = useState([]);
-  const [orders, setOrders] = useState([]); // <--- orders in context
+  const [orders, setOrders] = useState([]);
+  const [retailers, setRetailers] = useState([]); // <-- Add this line
+
+  // Socket event handlers for orders (as before)
+  on('order-cancelled', (data) => {
+    setOrders((orders) => orders.map((order) =>
+      order.order_id === data.order_id ? { ...order, status: 'cancelled' } : order
+    ));
+  });
+  on('new-order', (data) => {
+    setOrders((orders) => [...orders, data]);
+  });
+  on('order-completed', (data) => {
+    setOrders((orders) => orders.map((order) =>
+      order.order_id === data.order_id ? { ...order, status: 'delivered' } : order
+    ));
+  });
 
   // Fetch user details
   const getUserDetails = async () => {
@@ -32,7 +49,7 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Fetch all orders for this user (wholesaler/retailer)
+  // Fetch all orders
   const fetchOrders = useCallback(async () => {
     try {
       const token = await AsyncStorage.getItem('token');
@@ -46,12 +63,27 @@ export const AppProvider = ({ children }) => {
     }
   }, [apiUrl]);
 
+  // Fetch all retailers
+  const fetchRetailers = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const { data } = await axios.get(`${apiUrl}/api/wholesaler/get-retailers`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setRetailers(data || []);
+    } catch (error) {
+      setRetailers([]);
+      console.log('Error fetching retailers:', error);
+    }
+  }, [apiUrl]);
+
   const handleLogout = async () => {
     await AsyncStorage.removeItem('token');
     setUser(null);
     setOrders([]);
     setStoredProducts([]);
     setRetailerCart([]);
+    setRetailers([]); // <-- Reset retailers on logout
   };
 
   useEffect(() => {
@@ -73,7 +105,10 @@ export const AppProvider = ({ children }) => {
         setStoredProducts,
         orders,
         setOrders,
-        fetchOrders, // <--- expose fetchOrders!
+        fetchOrders,
+        retailers,         // <-- Expose retailers
+        setRetailers,      // <-- Expose setRetailers
+        fetchRetailers,    // <-- Expose fetchRetailers
       }}
     >
       {children}

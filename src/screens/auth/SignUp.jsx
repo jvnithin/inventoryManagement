@@ -10,11 +10,11 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useAppContext } from '../../context/AppContext';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'nativewind';
 
 const SignUpScreen = () => {
@@ -25,13 +25,14 @@ const SignUpScreen = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState(''); // <-- role state
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
   const handleSignUp = async () => {
-    if (!name || !email || !phone || !password) {
+    if (!name || !email || !phone || !password || !role) {
       Alert.alert('Error', 'Please fill all fields.');
       return;
     }
@@ -41,6 +42,7 @@ const SignUpScreen = () => {
         email,
         phone,
         password,
+        role,
       });
       Alert.alert('Success', 'Account created successfully!');
       navigation.navigate('SignIn');
@@ -63,7 +65,7 @@ const SignUpScreen = () => {
   const btnTextActive = 'text-background-light';
   const btnTextInactive = 'text-muted';
 
-  const allFilled = name && email && phone && password;
+  const allFilled = name && email && phone && password && role;
 
   return (
     <SafeAreaView className={`${bg} flex-1`}>
@@ -201,6 +203,29 @@ const SignUpScreen = () => {
               </Text>
             </View>
 
+            {/* Role Picker */}
+            <View className="mb-4">
+              <Text className={`text-muted text-sm font-medium mb-1`}>
+                Role
+              </Text>
+              <View className={`border ${inputBorder} rounded-xl overflow-hidden`}>
+                <Picker
+                  selectedValue={role}
+                  onValueChange={setRole}
+                  style={{
+                    color: isDark ? '#fff' : '#111827',
+                    backgroundColor: isDark ? '#1F2937' : '#fff',
+                    height: 48,
+                  }}
+                  dropdownIconColor={isDark ? '#fff' : '#111827'}
+                >
+                  <Picker.Item label="Select Role..." value="" color="#9CA3AF" />
+                  <Picker.Item label="Wholesaler" value="wholesaler" />
+                  <Picker.Item label="Retailer" value="retailer" />
+                </Picker>
+              </View>
+            </View>
+
             {/* Create Account Button */}
             <TouchableOpacity
               className={`w-full h-12 rounded-xl items-center justify-center mb-6 ${
@@ -210,10 +235,9 @@ const SignUpScreen = () => {
               disabled={!allFilled}
               activeOpacity={0.8}
             >
-              {/* <Text className={`text-base font-bold  ${
+              <Text className={`text-base font-bold  ${
                 allFilled ? btnTextActive : btnTextInactive
-              }`}> */}
-                <Text className='text-base font-bold btnTextActive'>
+              }`}>
                 Create Account
               </Text>
             </TouchableOpacity>
