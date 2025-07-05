@@ -1,9 +1,10 @@
+// src/screens/Profile.jsx
+
 import React, { useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   Modal,
   TextInput,
   Alert,
@@ -15,13 +16,14 @@ import { useAppContext } from '../../context/AppContext';
 import Geolocation from '@react-native-community/geolocation';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-const Profile = () => {
-  const { user, handleLogout,apiUrl,setUser } = useAppContext();
+import { useColorScheme } from 'nativewind';
 
-  // Modal state
+export default function Profile() {
+  const { user, handleLogout, apiUrl, setUser } = useAppContext();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [modalVisible, setModalVisible] = useState(false);
-
-  // Address fields state
   const [street, setStreet] = useState('');
   const [city, setCity] = useState('');
   const [stateName, setStateName] = useState('');
@@ -30,40 +32,21 @@ const Profile = () => {
   const [longitude, setLongitude] = useState('');
   const [fetchingLocation, setFetchingLocation] = useState(false);
 
-  // Open modal and prefill if address exists
   const handleChangeAddress = () => {
-    if (user?.address) {
-      setStreet(user.address.street || '');
-      setCity(user.address.city || '');
-      setStateName(user.address.state || '');
-      setZip(user.address.zip || '');
-      setLatitude(user.address.latitude ? String(user.address.latitude) : '');
-      setLongitude(
-        user.address.longitude ? String(user.address.longitude) : '',
-      );
-    } else {
-      setStreet('');
-      setCity('');
-      setStateName('');
-      setZip('');
-      setLatitude('');
-      setLongitude('');
-    }
+    const addr = user.address || {};
+    setStreet(addr.street || '');
+    setCity(addr.city || '');
+    setStateName(addr.state || '');
+    setZip(addr.zip || '');
+    setLatitude(addr.latitude?.toString() || '');
+    setLongitude(addr.longitude?.toString() || '');
     setModalVisible(true);
   };
 
-  // Permission and location fetching
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
       const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-        {
-          title: 'Geolocation Permission',
-          message: 'Can we access your location?',
-          buttonNeutral: 'Ask Me Later',
-          buttonNegative: 'Cancel',
-          buttonPositive: 'OK',
-        },
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
       );
       return granted === PermissionsAndroid.RESULTS.GRANTED;
     }
@@ -72,36 +55,22 @@ const Profile = () => {
 
   const fetchCurrentLocation = async () => {
     setFetchingLocation(true);
-    const hasPermission = await requestLocationPermission();
-    if (!hasPermission) {
+    if (!(await requestLocationPermission())) {
       Alert.alert('Permission Denied', 'Location permission is required.');
       setFetchingLocation(false);
       return;
     }
-    console.log("Fetching location");
     Geolocation.getCurrentPosition(
-      position => {
-        const { latitude, longitude } = position.coords;
-        setLatitude(latitude.toString());
-        setLongitude(longitude.toString());
-        setFetchingLocation(false); 
+      pos => {
+        setLatitude(pos.coords.latitude.toString());
+        setLongitude(pos.coords.longitude.toString());
+        setFetchingLocation(false);
       },
-      error => {
-        setFetchingLocation(false); 
-        if (error.code === 1) {
-          Alert.alert('Permission Denied', 'Please allow location access.');
-        } else if (error.code === 2) {
-          Alert.alert(
-            'Location Unavailable',
-            'Could not determine your location.',
-          );
-        } else if (error.code === 3) {
-          Alert.alert('Timeout', 'Location request timed out. Try again.');
-        } else {
-          Alert.alert('Error', error.message);
-        }
+      err => {
+        setFetchingLocation(false);
+        Alert.alert('Error', err.message);
       },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 10000 },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 10000 }
     );
   };
 
@@ -110,141 +79,145 @@ const Profile = () => {
 
   const handleUpdateAddress = async () => {
     try {
-      // Here you would call your API or update context with the new address
-      const token =await AsyncStorage.getItem('token');
-      if(!token){
-        Alert("Token not found");
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert('Error', 'Token not found.');
         return;
       }
-      const response = await axios.put(`${apiUrl}/api/retailer/edit-retailer`, { address:{street, city, state: stateName, zip, latitude, longitude} }, { headers: { Authorization: `Bearer ${token}` } });
-      console.log(response);
-      setUser({...user,address:{street, city, state: stateName, zip, latitude, longitude}});
+      await axios.put(
+        `${apiUrl}/api/retailer/edit-retailer`,
+        { address: { street, city, state: stateName, zip, latitude, longitude } },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setUser({ ...user, address: { street, city, state: stateName, zip, latitude, longitude } });
       Alert.alert('Address Updated', 'Your address has been updated.');
       setModalVisible(false);
-    } catch (error) {
-      console.log(error);
+    } catch {
       Alert.alert('Error', 'Failed to update address. Please try again.');
     }
   };
 
-  const onLogout = async () => {
-    await handleLogout();
-  };
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Profile</Text>
+    <View className={`${isDark ? 'bg-gray-900' : 'bg-gray-100'} flex-1 px-6 py-8`}>
+      {/* <Text className={`text-3xl font-bold mb-8 ${isDark ? 'text-white' : 'text-green-800'}`}>
+        Profile
+      </Text> */}
       {user && (
-        <View style={styles.infoBox}>
-          <Text style={styles.label}>Name:</Text>
-          <Text style={styles.value}>{user.name || 'N/A'}</Text>
-          <Text style={styles.label}>Email:</Text>
-          <Text style={styles.value}>{user.email || 'N/A'}</Text>
-          <Text style={styles.label}>Role:</Text>
-          <Text style={styles.value}>{user.role || 'N/A'}</Text>
+        <View className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 mb-8 shadow`}>
+          <Text className={`text-sm font-semibold mb-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Name:</Text>
+          <Text className={`text-lg mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>{user.name || 'N/A'}</Text>
+          <Text className={`text-sm font-semibold mb-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Email:</Text>
+          <Text className={`text-lg mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>{user.email || 'N/A'}</Text>
+          
+
+          
+    <Text className={`text-sm font-semibold ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+      Address:
+    </Text>
+    <Text className={`mt-1 mb-3 ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+      {[
+        user.address.street,
+        user.address.city,
+        user.address.state,
+        user.address.zip,
+      ]
+        .filter(Boolean)
+        .join(', ')}
+    </Text>
+
           <TouchableOpacity
-            style={styles.addressBtn}
+            className={`bg-blue-500 rounded-md py-3 ${isDark ? 'bg-blue-700' : ''}`}
             onPress={handleChangeAddress}
           >
-            <Text style={styles.addressBtnText}>Update Address</Text>
+            <Text className="text-center text-white font-semibold">Update Address</Text>
           </TouchableOpacity>
         </View>
       )}
-      <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
-        <Text style={styles.logoutText}>Logout</Text>
+      <TouchableOpacity
+        className="bg-red-600 rounded-md py-3 mb-4"
+        onPress={handleLogout}
+      >
+        <Text className="text-center text-white font-semibold">Logout</Text>
       </TouchableOpacity>
 
       {/* Address Modal */}
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Update Address</Text>
+      <Modal visible={modalVisible} transparent animationType="slide">
+        <View className="flex-1 bg-black/30 justify-center items-center">
+          <View className={`${isDark ? 'bg-gray-800' : 'bg-white'} w-11/12 p-6 rounded-xl shadow-lg`}>
+            <Text className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-green-800'}`}>
+              Update Address
+            </Text>
             <TextInput
-              style={styles.input}
+              className={`w-full h-12 px-4 mb-3 rounded-lg ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-100 border-gray-200 text-gray-900'} border`}
               placeholder="Street"
+              placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
               value={street}
               onChangeText={setStreet}
-              placeholderTextColor={'#ccc'}
             />
             <TextInput
-              style={styles.input}
+              className={`w-full h-12 px-4 mb-3 rounded-lg ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-100 border-gray-200 text-gray-900'} border`}
               placeholder="City"
+              placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
               value={city}
               onChangeText={setCity}
-              placeholderTextColor={'#ccc'}
             />
             <TextInput
-              style={styles.input}
+              className={`w-full h-12 px-4 mb-3 rounded-lg ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-100 border-gray-200 text-gray-900'} border`}
               placeholder="State"
+              placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
               value={stateName}
               onChangeText={setStateName}
-              placeholderTextColor={'#ccc'}
             />
             <TextInput
-              style={styles.input}
+              className={`w-full h-12 px-4 mb-3 rounded-lg ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-100 border-gray-200 text-gray-900'} border`}
               placeholder="Zip"
+              placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
               value={zip}
               onChangeText={setZip}
               keyboardType="numeric"
-              placeholderTextColor={'#ccc'}
             />
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View className="flex-row items-center mb-4">
               <TextInput
-                style={[styles.input, { flex: 1, marginRight: 8 }]}
+                className={`flex-1 h-12 px-4 rounded-lg ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-100 border-gray-200 text-gray-900'} border mr-2`}
                 placeholder="Latitude"
+                placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
                 value={latitude}
                 onChangeText={setLatitude}
                 keyboardType="numeric"
-                placeholderTextColor={'#ccc'}
               />
               <TextInput
-                style={[styles.input, { flex: 1 }]}
+                className={`flex-1 h-12 px-4 rounded-lg ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-100 border-gray-200 text-gray-900'} border mr-2`}
                 placeholder="Longitude"
+                placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
                 value={longitude}
                 onChangeText={setLongitude}
                 keyboardType="numeric"
-                placeholderTextColor={'#ccc'}
               />
               <TouchableOpacity
-                style={styles.locationBtn}
+                className={`px-4 py-3 rounded-lg ${isDark ? 'bg-blue-700' : 'bg-blue-500'}`}
                 onPress={fetchCurrentLocation}
                 disabled={fetchingLocation}
               >
                 {fetchingLocation ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.locationBtnText}>Use Current</Text>
+                  <Text className="text-white font-semibold">Use Current</Text>
                 )}
               </TouchableOpacity>
             </View>
-            <View style={{ flexDirection: 'row', marginTop: 20 }}>
+            <View className="flex-row">
               <TouchableOpacity
-                style={[
-                  styles.updateBtn,
-                  {
-                    backgroundColor: isAllFieldsFilled()
-                      ? '#06B6D4'
-                      : '#d1d5db',
-                  },
-                ]}
+                className={`flex-1 py-3 rounded-lg ${isAllFieldsFilled() ? (isDark ? 'bg-blue-600' : 'bg-blue-500') : 'bg-gray-400'}`}
                 onPress={handleUpdateAddress}
                 disabled={!isAllFieldsFilled()}
               >
-                <Text style={styles.updateBtnText}>Update</Text>
+                <Text className="text-center text-white font-semibold">Update</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[
-                  styles.updateBtn,
-                  { backgroundColor: '#DC2626', marginLeft: 10 },
-                ]}
+                className="flex-1 py-3 ml-2 rounded-lg bg-red-600"
                 onPress={() => setModalVisible(false)}
               >
-                <Text style={styles.updateBtnText}>Cancel</Text>
+                <Text className="text-center text-white font-semibold">Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -252,133 +225,4 @@ const Profile = () => {
       </Modal>
     </View>
   );
-};
-
-export default Profile;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ECFDF5',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#065F46',
-    marginBottom: 32,
-    letterSpacing: 1,
-  },
-  infoBox: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 24,
-    marginBottom: 40,
-    width: '100%',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-  },
-  label: {
-    fontSize: 16,
-    color: '#6B7280',
-    fontWeight: '600',
-    marginTop: 12,
-  },
-  value: {
-    fontSize: 16,
-    color: '#111827',
-    marginLeft: 8,
-    marginBottom: 6,
-  },
-  addressBtn: {
-    marginTop: 20,
-    backgroundColor: '#06B6D4',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    elevation: 1,
-  },
-  addressBtnText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 15,
-    letterSpacing: 0.5,
-  },
-  logoutBtn: {
-    backgroundColor: '#DC2626',
-    paddingVertical: 14,
-    paddingHorizontal: 60,
-    borderRadius: 8,
-    elevation: 2,
-  },
-  logoutText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    letterSpacing: 1,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.20)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '90%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 24,
-    elevation: 4,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#06B6D4',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  input: {
-    height: 44,
-    borderColor: '#e5e7eb',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-    backgroundColor: '#f9fafb',
-    color: '#374151',
-    fontSize: 15,
-  },
-  locationBtn: {
-    backgroundColor: '#10B981',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginLeft: 8,
-    height: 44,
-    justifyContent: 'center',
-  },
-  locationBtnText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 13,
-  },
-  updateBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  updateBtnText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    letterSpacing: 1,
-  },
-});
+}
