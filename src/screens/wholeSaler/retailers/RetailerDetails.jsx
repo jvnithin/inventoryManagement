@@ -6,319 +6,213 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  SafeAreaView,
-  Alert
+  Alert,
+  StatusBar
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useAppContext } from '../../../context/AppContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useColorScheme } from 'nativewind';
 
 const fallbackImage = 'https://ui-avatars.com/api/?background=16A34A&color=fff&name=R';
 
-const RetailerDetails = ({ route, navigation }) => {
+export default function RetailerDetails({ route, navigation }) {
   const { apiUrl } = useAppContext();
   const { retailer } = route.params;
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  // Form state
   const [name, setName] = useState(retailer.name);
   const [contact, setContact] = useState(retailer.phone);
-
-  // Address fields
   const [street, setStreet] = useState(retailer.address?.street || '');
   const [city, setCity] = useState(retailer.address?.city || '');
-  const [state, setState] = useState(retailer.address?.state || '');
+  const [stateField, setStateField] = useState(retailer.address?.state || '');
   const [zip, setZip] = useState(retailer.address?.zip || '');
-
   const [photo, setPhoto] = useState(retailer.photo);
 
-  const totalOrders = 6;
-  const totalValue = retailer.totalValue;
-
-  const orders = [
-    {
-      id: 'O001',
-      date: '2025-06-28',
-      items: ['Organic Apples', 'Green Tea'],
-      value: 500,
-    },
-    {
-      id: 'O002',
-      date: '2025-06-30',
-      items: ['Almonds', 'Natural Honey'],
-      value: 850,
-    },
-    {
-      id: 'O003',
-      date: '2025-07-01',
-      items: ['Almonds'],
-      value: 450,
-    },
-  ];
+  const totalOrders = retailer.ordersCount ?? 0;
+  const totalValue = retailer.totalValue ?? 0;
 
   const handleSaveRetailer = async () => {
     try {
-      const userToken = await AsyncStorage.getItem('token');
-      const address = { street, city, state, zip };
-      const response = await axios.put(
+      const token = await AsyncStorage.getItem('token');
+      const address = { street, city, state: stateField, zip };
+      await axios.put(
         `${apiUrl}/api/wholesaler/edit-retailer/${retailer.user_id}`,
         { name, phone: contact, address, photo },
-        { headers: { Authorization: `Bearer ${userToken}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      console.log(response.data);
       Alert.alert('Success', 'Retailer updated successfully!');
       navigation.goBack();
-    } catch (error) {
-      console.log(error);
+    } catch {
       Alert.alert('Error', 'Failed to update retailer!');
     }
   };
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
-      {/* Header */}
-      <View style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingTop: 16,
-        paddingBottom: 12,
-        backgroundColor: '#16A34A',
-        borderBottomLeftRadius: 18,
-        borderBottomRightRadius: 18,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 3,
-      }}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{
-            marginRight: 14,
-            backgroundColor: '#bbf7d0',
-            borderRadius: 20,
-            padding: 5,
-          }}
-        >
-          <Icon name="arrow-back" size={24} color="#065F46" />
-        </TouchableOpacity>
-        <Text style={{
-          fontSize: 22,
-          fontWeight: 'bold',
-          color: '#fff',
-          flex: 1,
-        }} numberOfLines={1}>
-          {retailer.name}
-        </Text>
-      </View>
+  // Color tokens
+  const bg = isDark ? 'bg-gray-900' : 'bg-gray-50';
+  const cardBg = isDark ? 'bg-gray-800' : 'bg-white';
+  const text = isDark ? 'text-gray-100' : 'text-gray-800';
+  const label = isDark ? 'text-gray-400' : 'text-gray-600';
+  const inputBg = isDark ? 'bg-gray-700' : 'bg-gray-100';
+  const inputBorder = isDark ? 'border-gray-600' : 'border-gray-200';
+  const accent = '#16A34A';
 
-      <ScrollView style={{ flex: 1, paddingHorizontal: 16, paddingTop: 18 }}>
-        {/* Profile Section */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18 }}>
-          <Image
-            source={{ uri: photo || fallbackImage }}
-            style={{
-              width: 80,
-              height: 80,
-              borderRadius: 40,
-              marginRight: 18,
-              borderWidth: 2,
-              borderColor: '#bbf7d0',
-              backgroundColor: '#e6f9ed'
-            }}
-            onError={() => setPhoto(fallbackImage)}
-          />
+  // Sample orders (replace with dynamic if available)
+  const orders = retailer.ordersSample || [
+    { id: 'O001', date: '2025-06-28', items: ['Organic Apples','Green Tea'], value: 500 },
+    { id: 'O002', date: '2025-06-30', items: ['Almonds','Natural Honey'], value: 850 },
+    { id: 'O003', date: '2025-07-01', items: ['Almonds'], value: 450 },
+  ];
+
+  return (
+    <View className={`${bg} flex-1`}>
+      <StatusBar backgroundColor={accent} barStyle={isDark ? 'light-content' : 'dark-content'} />
+
+      <SafeAreaView className={`${bg} flex-1`}>
+        {/* Header */}
+        <View className="flex-row items-center px-4 pt-4 pb-3" style={{
+          backgroundColor: accent,
+          shadowColor: '#000',
+          shadowOpacity: 0.1,
+          shadowRadius: 6,
+          elevation: 3,
+        }}>
           <TouchableOpacity
-            onPress={() => console.log('Change Photo')}
-            style={{
-              backgroundColor: '#e6f9ed',
-              paddingHorizontal: 14,
-              paddingVertical: 7,
-              borderRadius: 16,
-            }}
+            onPress={() => navigation.goBack()}
+            className="mr-3 bg-green-100 rounded-full p-2"
           >
-            <Text style={{ color: '#16A34A', fontWeight: '600' }}>Change Photo</Text>
+            <Icon name="arrow-back" size={24} color="#065F46" />
           </TouchableOpacity>
+          <Text className="flex-1 text-white text-xl font-bold" numberOfLines={1}>
+            {retailer.name}
+          </Text>
         </View>
 
-        {/* Editable Fields */}
-        <View style={{
-          backgroundColor: '#fff',
-          borderRadius: 18,
-          padding: 16,
-          marginBottom: 20,
-          shadowColor: '#000',
-          shadowOpacity: 0.06,
-          shadowRadius: 4,
-          elevation: 2,
-        }}>
-          <Text style={{ fontSize: 13, color: '#64748b', marginBottom: 3 }}>Retailer Name</Text>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            style={{
-              borderWidth: 1,
-              borderColor: '#e5e7eb',
-              borderRadius: 10,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              marginBottom: 10,
-              fontSize: 16,
-              color: '#065F46',
-              backgroundColor: '#f1f5f9'
-            }}
-          />
+        <ScrollView className="px-4 py-4">
+          {/* Profile */}
+          <View className="flex-row items-center mb-6">
+            <Image
+              source={{ uri: photo || fallbackImage }}
+              className="w-20 h-20 rounded-full mr-4 border-2 border-green-200 bg-green-50"
+              onError={() => setPhoto(fallbackImage)}
+            />
+            <TouchableOpacity
+              onPress={() => console.log('Change Photo')}
+              className="px-4 py-2 bg-green-100 rounded-full"
+            >
+              <Text className="text-green-800 font-medium">Change Photo</Text>
+            </TouchableOpacity>
+          </View>
 
-          <Text style={{ fontSize: 13, color: '#64748b', marginBottom: 3 }}>Contact Number</Text>
-          <TextInput
-            value={contact}
-            onChangeText={setContact}
-            keyboardType="phone-pad"
-            style={{
-              borderWidth: 1,
-              borderColor: '#e5e7eb',
-              borderRadius: 10,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              marginBottom: 10,
-              fontSize: 16,
-              color: '#065F46',
-              backgroundColor: '#f1f5f9'
-            }}
-          />
+          {/* Form Card */}
+          <View className={`${cardBg} rounded-xl p-4 mb-6 shadow-md`}>
+            <Text className={`text-sm ${label} mb-1`}>Retailer Name</Text>
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-3 ${text}`}
+            />
 
-          <Text style={{ fontSize: 13, color: '#64748b', marginBottom: 8, marginTop: 8 }}>Address</Text>
-          <TextInput
-            placeholder="Street"
-            value={street}
-            onChangeText={setStreet}
-            style={{
-              borderWidth: 1,
-              borderColor: '#e5e7eb',
-              borderRadius: 10,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              marginBottom: 8,
-              fontSize: 16,
-              color: '#065F46',
-              backgroundColor: '#f1f5f9'
-            }}
-          />
-          <TextInput
-            placeholder="City"
-            value={city}
-            onChangeText={setCity}
-            style={{
-              borderWidth: 1,
-              borderColor: '#e5e7eb',
-              borderRadius: 10,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              marginBottom: 8,
-              fontSize: 16,
-              color: '#065F46',
-              backgroundColor: '#f1f5f9'
-            }}
-          />
-          <TextInput
-            placeholder="State"
-            value={state}
-            onChangeText={setState}
-            style={{
-              borderWidth: 1,
-              borderColor: '#e5e7eb',
-              borderRadius: 10,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              marginBottom: 8,
-              fontSize: 16,
-              color: '#065F46',
-              backgroundColor: '#f1f5f9'
-            }}
-          />
-          <TextInput
-            placeholder="ZIP"
-            value={zip}
-            onChangeText={setZip}
-            keyboardType="number-pad"
-            style={{
-              borderWidth: 1,
-              borderColor: '#e5e7eb',
-              borderRadius: 10,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              marginBottom: 10,
-              fontSize: 16,
-              color: '#065F46',
-              backgroundColor: '#f1f5f9'
-            }}
-          />
+            <Text className={`text-sm ${label} mb-1`}>Contact Number</Text>
+            <TextInput
+              value={contact}
+              onChangeText={setContact}
+              keyboardType="phone-pad"
+              className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-3 ${text}`}
+            />
 
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
-            <View>
-              <Text style={{ fontSize: 13, color: '#64748b' }}>Total Order Value</Text>
-              <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#16A34A' }}>₹{totalValue}</Text>
-            </View>
-            <View>
-              <Text style={{ fontSize: 13, color: '#64748b' }}>Total Orders</Text>
-              <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#16A34A' }}>{totalOrders}</Text>
+            <Text className={`text-sm ${label} mb-2`}>Address</Text>
+            <TextInput
+              placeholder="Street"
+              value={street}
+              onChangeText={setStreet}
+              className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-2 ${text}`}
+              placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
+            />
+            <TextInput
+              placeholder="City"
+              value={city}
+              onChangeText={setCity}
+              className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-2 ${text}`}
+              placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
+            />
+            <TextInput
+              placeholder="State"
+              value={stateField}
+              onChangeText={setStateField}
+              className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-2 ${text}`}
+              placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
+            />
+            <TextInput
+              placeholder="ZIP"
+              value={zip}
+              onChangeText={setZip}
+              keyboardType="number-pad"
+              className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-4 ${text}`}
+              placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
+            />
+
+            {/* Summary */}
+            <View className="flex-row justify-between mt-4">
+              <View>
+                <Text className={`text-sm ${label}`}>Total Orders</Text>
+                <Text className="text-lg font-bold" style={{ color: accent }}>
+                  {totalOrders}
+                </Text>
+              </View>
+              <View>
+                <Text className={`text-sm ${label}`}>Total Value</Text>
+                <Text className="text-lg font-bold" style={{ color: accent }}>
+                  ₹{totalValue}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* Orders List */}
-        <View style={{ marginBottom: 24 }}>
-          <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#16A34A', marginBottom: 10 }}>
-            Orders
+          {/* Orders List */}
+          <Text className="text-lg font-bold mb-3" style={{ color: accent }}>
+            Recent Orders
           </Text>
-          {orders.map((order) => (
+          {orders.map(o => (
             <View
-              key={order.id}
-              style={{
-                borderWidth: 1,
-                borderColor: '#e5e7eb',
-                borderRadius: 14,
-                padding: 14,
-                marginBottom: 10,
-                backgroundColor: '#f9fafb',
-                shadowColor: '#000',
-                shadowOpacity: 0.04,
-                shadowRadius: 2,
-                elevation: 1,
-              }}
+              key={o.id}
+              className={`${cardBg} rounded-lg p-4 mb-3 border ${
+                isDark ? 'border-gray-700' : 'border-gray-200'
+              }`}
             >
-              <Text style={{ fontSize: 15, fontWeight: '600', color: '#16A34A', marginBottom: 2 }}>
-                {order.date}
+              <Text className="font-semibold mb-1" style={{ color: accent }}>
+                {o.date}
               </Text>
-              <Text style={{ fontSize: 13, color: '#64748b', marginBottom: 2 }}>
-                Items: <Text style={{ color: '#065F46' }}>{order.items.join(', ')}</Text>
+              <Text className={`text-sm ${label} mb-1`}>
+                Items:{' '}
+                <Text className={`font-medium ${text}`}>
+                  {o.items.join(', ')}
+                </Text>
               </Text>
-              <Text style={{ fontSize: 14, color: '#065F46', fontWeight: 'bold' }}>
-                Order Value: ₹{order.value}
-              </Text>
+              <View className="flex-row items-center">
+                <Icon name="pricetag" size={16} color={accent} />
+                <Text className="ml-1 font-bold" style={{ color: accent }}>
+                  ₹{o.value}
+                </Text>
+              </View>
             </View>
           ))}
-        </View>
 
-        {/* Save Button */}
-        <TouchableOpacity
-          onPress={handleSaveRetailer}
-          style={{
-            backgroundColor: '#16A34A',
-            paddingVertical: 14,
-            borderRadius: 12,
-            marginBottom: 32,
-            shadowColor: '#000',
-            shadowOpacity: 0.08,
-            shadowRadius: 4,
-            elevation: 2,
-          }}
-        >
-          <Text style={{ color: 'white', textAlign: 'center', fontSize: 17, fontWeight: 'bold', letterSpacing: 0.5 }}>
-            Save Changes
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+          {/* Save Button */}
+          <TouchableOpacity
+            onPress={handleSaveRetailer}
+            className="mt-6 mb-8 bg-green-700 rounded-lg py-3 shadow-lg"
+          >
+            <Text className="text-center text-white font-semibold text-base">
+              Save Changes
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
-};
-
-export default RetailerDetails;
+}

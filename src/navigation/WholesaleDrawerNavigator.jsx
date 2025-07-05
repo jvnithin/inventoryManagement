@@ -1,26 +1,35 @@
 import React from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import Icon from 'react-native-vector-icons/Ionicons';
-import HomeScreen from '../screens/wholeSaler/OrdersDashboard';
-import ProductList from '../screens/wholeSaler/products/ProductList';
+import { useColorScheme } from 'nativewind';
+import MyProductsStack from './MyProductsStack';
+import OrdersDashboard from '../screens/wholeSaler/OrdersDashboard';
 import RetailerList from '../screens/wholeSaler/retailers/RetailerList';
 import Invoices from '../screens/wholeSaler/Invoices';
 import Transactions from '../screens/wholeSaler/Transactions';
 import Settings from '../screens/wholeSaler/Settings';
-import MyProductsStack from './MyProductsStack';
-import OrdersDashboard from '../screens/wholeSaler/OrdersDashboard';
 
 const Drawer = createDrawerNavigator();
 
 export default function DrawerNavigator() {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  // Color tokens
+  const headerBg = '#16A34A';
+  const headerTint = '#FFFFFF';
+  const drawerBg = isDark ? '#1F2937' : '#ECFDF5';       // gray-800 / green-50
+  const activeTint = isDark ? '#A3E635' : '#065F46';     // lime-400 / green-800
+  const inactiveTint = isDark ? '#9CA3AF' : '#4B5563';   // gray-400 / gray-600
+
   return (
     <Drawer.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: '#16A34A' },
-        headerTintColor: 'white',
-        drawerActiveTintColor: '#065F46',
-        drawerInactiveTintColor: '#4B5563',
-        drawerStyle: { backgroundColor: '#ECFDF5' },
+        headerStyle: { backgroundColor: headerBg },
+        headerTintColor: headerTint,
+        drawerStyle: { backgroundColor: drawerBg },
+        drawerActiveTintColor: activeTint,
+        drawerInactiveTintColor: inactiveTint,
       }}
     >
       <Drawer.Screen
@@ -68,9 +77,6 @@ export default function DrawerNavigator() {
           ),
         }}
       />
-      {/* <Drawer.Screen name="My Profile" component={MyProfile} options={{
-        drawerIcon: ({ color }) => <Icon name="person-circle-outline" size={20} color={color} />,
-      }} /> */}
       <Drawer.Screen
         name="Settings"
         component={Settings}

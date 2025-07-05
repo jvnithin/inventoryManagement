@@ -1,26 +1,38 @@
+// src/navigation/DrawerNavigator.jsx
+
 import React from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useColorScheme } from 'nativewind';
 
-import HomeScreen from '../screens/retailer/HomeScreen';
+import HomeStack from './retailer/HomeStack';
 import CartScreen from '../screens/retailer/CartScreen';
 import MyOrdersScreen from '../screens/retailer/MyOrdersScreen';
 import InvoicesScreen from '../screens/retailer/InvoicesScreen';
 import TransactionsScreen from '../screens/retailer/TransactionsScreen';
-import HomeStack from './retailer/HomeStack';
 import Profile from '../screens/retailer/Profile';
 
 const Drawer = createDrawerNavigator();
 
 export default function DrawerNavigator() {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  // Color tokens
+  const headerBg = '#16A34A';
+  const headerTint = '#FFFFFF';
+  const drawerBg = isDark ? '#1F2937' : '#ECFDF5';       // gray-800 / green-50
+  const activeTint = isDark ? '#A3E635' : '#065F46';     // lime-400 / green-800
+  const inactiveTint = isDark ? '#9CA3AF' : '#4B5563';   // gray-400 / gray-600
+
   return (
     <Drawer.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: '#16A34A' },
-        headerTintColor: 'white',
-        drawerActiveTintColor: '#065F46',
-        drawerInactiveTintColor: '#4B5563',
-        drawerStyle: { backgroundColor: '#ECFDF5' },
+        headerStyle: { backgroundColor: headerBg },
+        headerTintColor: headerTint,
+        drawerStyle: { backgroundColor: drawerBg },
+        drawerActiveTintColor: activeTint,
+        drawerInactiveTintColor: inactiveTint,
       }}
     >
       <Drawer.Screen
