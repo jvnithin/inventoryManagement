@@ -1,6 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,10 +8,14 @@ import {
   TextInput,
   ActivityIndicator,
   Modal,
+  SafeAreaView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 import { useAppContext } from '../../context/AppContext';
 import { emit } from '../../services/socketService';
+import { useColorScheme } from 'nativewind';
 
 export default function WholesalerProducts({ route, navigation }) {
   const { apiUrl, user, retailerCart, setRetailerCart } = useAppContext();
@@ -27,61 +29,66 @@ export default function WholesalerProducts({ route, navigation }) {
   const [toastText, setToastText] = useState('');
   const toastTimeoutRef = useRef();
 
-  // Fetch products for this wholesaler
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  // Define colors based on theme
+  const colors = {
+    background: isDark ? '#1F2937' : '#FFFFFF',
+    card: isDark ? '#374151' : '#ECFDF5',
+    text: isDark ? '#F9FAFB' : '#065F46',
+    subtext: isDark ? '#9CA3AF' : '#4B5563',
+    primary: '#16A34A',
+    danger: '#DC2626',
+    modalBg: isDark ? '#374151' : '#FFFFFF',
+    toastBg: '#16A34A',
+    toastBtnBg: '#065F46',
+  };
+
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const userToken = await AsyncStorage.getItem('token');
-      const response = await axios.get(
+      const token = await AsyncStorage.getItem('token');
+      const res = await axios.get(
         `${apiUrl}/api/wholesaler/get-products/${wholesaler.user_id}`,
-        { headers: { Authorization: `Bearer ${userToken}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      setProducts(response.data || []);
-    } catch (e) {
+      setProducts(res.data || []);
+    } catch {
       Alert.alert('Error', 'Could not load products.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch cart from backend and update context
   const fetchCart = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
-      const response = await axios.get(`${apiUrl}/api/retailer/get-cart`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await axios.get(`${apiUrl}/api/retailer/get-cart`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      const newCart = {};
-      response.data.forEach(item => {
-        if (newCart[item.product_id]) {
-          newCart[item.product_id].quantity += item.quantity;
-        } else {
-          newCart[item.product_id] = item;
-        }
+      const aggregated = {};
+      res.data.forEach(item => {
+        if (aggregated[item.product_id]) {
+          aggregated[item.product_id].quantity += item.quantity;
+        } else aggregated[item.product_id] = { ...item };
       });
-      setRetailerCart(Object.values(newCart));
-    } catch (error) {
-      console.error('Error fetching cart:', error);
+      setRetailerCart(Object.values(aggregated));
+    } catch (e) {
+      console.error(e);
     }
   };
 
   useEffect(() => {
     fetchProducts();
     fetchCart();
-    emit("retailer-connect", { message: "retailer connected", id: user.userId });
-    return () => {
-      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    };
-    // eslint-disable-next-line
+    emit('retailer-connect', { message: 'retailer connected', id: user.userId });
+    return () => clearTimeout(toastTimeoutRef.current);
   }, []);
 
-  // Add to cart with quantity
   const addToCart = async (product, qty) => {
-    if (!product) return;
-    const numQty = parseInt(qty, 10);
-    if (isNaN(numQty) || numQty < 1) {
+    const num = parseInt(qty, 10);
+    if (isNaN(num) || num < 1) {
       Alert.alert('Invalid Quantity', 'Please enter a valid quantity.');
       return;
     }
@@ -91,7 +98,7 @@ export default function WholesalerProducts({ route, navigation }) {
         `${apiUrl}/api/retailer/add-to-cart`,
         {
           product_id: product.product_id,
-          quantity: numQty,
+          quantity: num,
           name: product.name,
           wholesaler_id: product.wholesaler_id,
           price: product.price,
@@ -99,19 +106,19 @@ export default function WholesalerProducts({ route, navigation }) {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      await fetchCart(); // Update context cart from backend
+      await fetchCart();
       setQuantity('1');
       setQuantityModal(false);
-      setToastText(`${product.name} x${qty} added to your cart!`);
+      setToastText(`${product.name} x${num} added to your cart!`);
       setToastVisible(true);
-      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+      clearTimeout(toastTimeoutRef.current);
       toastTimeoutRef.current = setTimeout(() => setToastVisible(false), 3000);
-    } catch (e) {
+    } catch {
       Alert.alert('Error', 'Failed to add to cart.');
     }
   };
 
-  const handleAddPress = (product) => {
+  const handleAddPress = product => {
     setSelectedProduct(product);
     setQuantity('1');
     setQuantityModal(true);
@@ -119,58 +126,77 @@ export default function WholesalerProducts({ route, navigation }) {
 
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" color="#16A34A" />
-        <Text className="mt-4 text-green-800">Loading Products...</Text>
+      <View style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors.background
+      }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ marginTop: 16, color: colors.text }}>Loading Products...</Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-white p-4">
-      {/* Back Button and Title */}
-      <View className="flex-row items-center mb-4">
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          className="mr-2"
-          accessibilityLabel="Go back"
-        >
-          <Icon name="arrow-back" size={26} color="#065F46" />
-        </TouchableOpacity>
-        <Text className="text-xl font-bold text-green-800">
+    <View style={{ flex: 1, backgroundColor: colors.background, padding: 16 }}>
+      {/* Header */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+        {/* <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 12 }}>
+          <Icon name="arrow-back" size={26} color={colors.text} />
+        </TouchableOpacity> */}
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.text }}>
           {wholesaler.name} Products
         </Text>
       </View>
 
       <FlatList
         data={products}
-        keyExtractor={item => (item.product_id || item.id)?.toString()}
+        keyExtractor={item => String(item.product_id || item.id)}
         renderItem={({ item }) => (
-          <View className="bg-green-100 rounded-xl p-4 mb-3 flex-row justify-between items-center">
+          <View style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            backgroundColor: colors.card,
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: 12
+          }}>
             <View>
-              <Text className="font-semibold text-green-900">{item.name}</Text>
-              <Text className="text-gray-700">₹{item.price} | Stock: {item.stock}</Text>
+              <Text style={{ fontWeight: '600', color: colors.text, marginBottom: 4 }}>
+                {item.name}
+              </Text>
+              <Text style={{ color: colors.subtext }}>
+                ₹{item.price} | Stock: {item.stock}
+              </Text>
             </View>
             <TouchableOpacity
-              className="bg-green-700 px-4 py-2 rounded-lg"
               onPress={() => handleAddPress(item)}
+              style={{
+                backgroundColor: colors.primary,
+                paddingVertical: 8,
+                paddingHorizontal: 16,
+                borderRadius: 8
+              }}
             >
-              <Text className="text-white font-semibold">Add to Cart</Text>
+              <Text style={{ color: '#fff', fontWeight: '600' }}>Add to Cart</Text>
             </TouchableOpacity>
           </View>
         )}
         ListEmptyComponent={
-          <Text className="text-gray-500 text-center mt-10">No products available.</Text>
+          <Text style={{
+            textAlign: 'center',
+            color: colors.subtext,
+            marginTop: 32
+          }}>
+            No products available.
+          </Text>
         }
       />
 
       {/* Quantity Modal */}
-      <Modal
-        visible={quantityModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setQuantityModal(false)}
-      >
+      <Modal visible={quantityModal} transparent animationType="fade">
         <View style={{
           flex: 1,
           backgroundColor: 'rgba(0,0,0,0.3)',
@@ -178,24 +204,25 @@ export default function WholesalerProducts({ route, navigation }) {
           alignItems: 'center'
         }}>
           <View style={{
-            backgroundColor: 'white',
+            width: '80%',
+            backgroundColor: colors.modalBg,
             borderRadius: 16,
             padding: 24,
-            width: '80%',
             alignItems: 'center'
           }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16 }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.text, marginBottom: 12 }}>
               Enter quantity for {selectedProduct?.name}
             </Text>
             <TextInput
               style={{
-                borderWidth: 1,
-                borderColor: '#16A34A',
-                borderRadius: 8,
-                padding: 10,
                 width: 100,
+                height: 40,
+                borderWidth: 1,
+                borderColor: colors.primary,
+                borderRadius: 8,
                 textAlign: 'center',
-                fontSize: 18,
+                fontSize: 16,
+                color: colors.text,
                 marginBottom: 20
               }}
               keyboardType="number-pad"
@@ -203,29 +230,29 @@ export default function WholesalerProducts({ route, navigation }) {
               onChangeText={setQuantity}
               autoFocus
             />
-            <View style={{ flexDirection: 'row', gap: 12 }}>
+            <View style={{ flexDirection: 'row' }}>
               <TouchableOpacity
+                onPress={() => selectedProduct && addToCart(selectedProduct, quantity)}
                 style={{
-                  backgroundColor: '#16A34A',
+                  backgroundColor: colors.primary,
                   paddingVertical: 10,
                   paddingHorizontal: 24,
                   borderRadius: 8,
-                  marginRight: 10
+                  marginRight: 12
                 }}
-                onPress={() => selectedProduct && addToCart(selectedProduct, quantity)}
               >
-                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Add</Text>
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Add</Text>
               </TouchableOpacity>
               <TouchableOpacity
+                onPress={() => setQuantityModal(false)}
                 style={{
-                  backgroundColor: '#f87171',
+                  backgroundColor: colors.danger,
                   paddingVertical: 10,
                   paddingHorizontal: 24,
                   borderRadius: 8
                 }}
-                onPress={() => setQuantityModal(false)}
               >
-                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Cancel</Text>
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -234,41 +261,36 @@ export default function WholesalerProducts({ route, navigation }) {
 
       {/* Toast */}
       {toastVisible && (
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 24,
-            left: 20,
-            right: 20,
-            backgroundColor: '#16A34A',
-            borderRadius: 16,
-            padding: 18,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            shadowColor: '#000',
-            shadowOpacity: 0.15,
-            shadowRadius: 6,
-            elevation: 8,
-          }}
-        >
-          <Text style={{ color: 'white', fontWeight: 'bold', flex: 1 }}>
-            {toastText}
-          </Text>
+        <View style={{
+          position: 'absolute',
+          bottom: 24,
+          left: 20,
+          right: 20,
+          backgroundColor: colors.toastBg,
+          borderRadius: 12,
+          padding: 16,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          shadowColor: '#000',
+          shadowOpacity: 0.15,
+          shadowRadius: 6,
+          elevation: 8
+        }}>
+          <Text style={{ color: '#fff', fontWeight: 'bold', flex: 1 }}>{toastText}</Text>
           <TouchableOpacity
-            style={{
-              marginLeft: 16,
-              backgroundColor: '#065F46',
-              paddingVertical: 7,
-              paddingHorizontal: 16,
-              borderRadius: 8,
-            }}
             onPress={() => {
               setToastVisible(false);
               navigation.navigate('Cart');
             }}
+            style={{
+              backgroundColor: colors.toastBtnBg,
+              paddingVertical: 8,
+              paddingHorizontal: 16,
+              borderRadius: 8
+            }}
           >
-            <Text style={{ color: 'white', fontWeight: 'bold' }}>Go to Cart</Text>
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Go to Cart</Text>
           </TouchableOpacity>
         </View>
       )}

@@ -104,7 +104,7 @@ export default function RetailerDetails({ route, navigation }) {
               onPress={() => console.log('Change Photo')}
               className="px-4 py-2 bg-green-100 rounded-full"
             >
-              <Text className="text-green-800 font-medium">Change Photo</Text>
+              <Text className="text-green-800 font-medium">Change Photo </Text>
             </TouchableOpacity>
           </View>
 

@@ -84,7 +84,7 @@ export default function PendingOrders({ orders, markAsDelivered }) {
           >
             <View className="flex-row justify-between items-center mb-2">
               <Text className={`text-base font-semibold ${isDark ? 'text-white' : 'text-green-800'}`}>
-                Order Id : {order.order_id}
+                Order Id :  {order.order_id}
               </Text>
               <Text className={`px-2 py-1 text-xs font-bold rounded-full ${order.status === 'pending'
                 ? isDark ? 'bg-yellow-700 text-yellow-100' : 'bg-yellow-100 text-yellow-800'
@@ -134,7 +134,7 @@ export default function PendingOrders({ orders, markAsDelivered }) {
         activeOpacity={0.8}
       >
         <Icon name="map-outline" size={20} color="#fff" />
-        <Text className="ml-2 text-white font-semibold">Open Map</Text>
+        <Text className="ml-2 text-white font-semibold px-1">Open Map</Text>
       </TouchableOpacity>
     </View>
   );

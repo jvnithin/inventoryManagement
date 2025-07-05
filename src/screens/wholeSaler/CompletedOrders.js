@@ -105,7 +105,7 @@ export default function CompletedOrders({ orders }) {
                   isDark ? 'text-white' : 'text-green-800'
                 }`}
               >
-                Order Id : {order.order_id}
+                Order Id :  {order.order_id}
               </Text>
               <Text
                 className={`

@@ -106,7 +106,7 @@ export default function Transactions() {
         </View>
       </View>
       <Text
-        className={`text-sm font-medium ${
+        className={`text-sm font-medium px-1 ${
           item.status === 'Completed'
             ? 'text-green-700'
             : item.status === 'Pending'
@@ -114,7 +114,7 @@ export default function Transactions() {
             : 'text-red-600'
         }`}
       >
-        {item.status}
+        {item.status} 
       </Text>
     </TouchableOpacity>
   );
@@ -136,14 +136,14 @@ export default function Transactions() {
       >
         {/* Header & Search */}
         <View className={`${cardBg} border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-          <View className="flex-row justify-between items-center px-4 py-3">
+          {/* <View className="flex-row justify-between items-center px-4 py-3">
             <Text className={`text-2xl font-bold ${textPrimary}`}>Transactions</Text>
             <TouchableOpacity className="p-2 rounded-full" style={{ backgroundColor: '#10B98120' }}>
               <Icon name="filter-outline" size={20} color={accentGreen} />
             </TouchableOpacity>
-          </View>
+          </View> */}
           <View className="mx-4 mb-3">
-            <View className={`flex-row items-center rounded-full px-4 py-2 shadow-sm ${cardBg}`}>
+            <View className={`flex-row items-center rounded-full px-4 py-2 border mt-2 shadow-sm ${cardBg}`}>
               <Icon name="search-outline" size={20} color="#9CA3AF" />
               <TextInput
                 className={`ml-3 flex-1 ${textPrimary}`}

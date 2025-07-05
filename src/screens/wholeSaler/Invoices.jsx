@@ -108,12 +108,12 @@ export default function Invoices() {
         >
           {item.status}
         </Text>
-        <Icon
+        {/* <Icon
           name="chevron-forward-outline"
           size={22}
           color={isDark ? '#A3E635' : '#065F46'}
           style={{ marginTop: 16 }}
-        />
+        /> */}
       </View>
     </TouchableOpacity>
   );
@@ -137,19 +137,19 @@ export default function Invoices() {
       >
         {/* Header & Search */}
         <View className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b`}>
-          <View className="flex-row justify-between items-center px-4 py-3">
+          {/* <View className="flex-row justify-between items-center px-4 py-3">
             <Text className={`${isDark ? 'text-gray-100' : 'text-gray-800'} text-2xl font-bold`}>
               Invoices
             </Text>
             <TouchableOpacity className={`${isDark ? 'bg-green-700' : 'bg-green-100'} p-2 rounded-full`}>
               <Icon name="filter-outline" size={20} color="#10B981" />
             </TouchableOpacity>
-          </View>
+          </View> */}
           <View className="mx-4 mb-3">
-            <View className={`${isDark ? 'bg-gray-800 shadow-black/20' : 'bg-white shadow-sm'} flex-row items-center rounded-full px-4 py-2`}>
+            <View className={`${isDark ? 'bg-gray-800 shadow-black/20' : 'bg-white shadow-sm'} flex-row items-center rounded-full px-4 py-2 border mt-2`}>
               <Icon name="search-outline" size={20} color="#9CA3AF" />
               <TextInput
-                className={`${isDark ? 'text-gray-100' : 'text-gray-700'} ml-3 flex-1`}
+                className={`${isDark ? 'text-gray-100' : 'text-gray-700'} ml-3 flex-1 `}
                 placeholder="Search invoices..."
                 placeholderTextColor="#9CA3AF"
                 value={search}

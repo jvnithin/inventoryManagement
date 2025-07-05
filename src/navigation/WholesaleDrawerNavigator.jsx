@@ -9,18 +9,30 @@ import Invoices from '../screens/wholeSaler/Invoices';
 import Transactions from '../screens/wholeSaler/Transactions';
 import Settings from '../screens/wholeSaler/Settings';
 
+// Define your colors object matching tailwind.config.js
+const COLORS = {
+  primary: '#16A34A',
+  secondary: '#065F46',
+  accent: '#22C55E',
+  muted: '#9CA3AF',
+  background: {
+    light: '#FFFFFF',
+    dark: '#1F2937',
+  },
+};
+
 const Drawer = createDrawerNavigator();
 
 export default function DrawerNavigator() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  // Color tokens
-  const headerBg = '#16A34A';
-  const headerTint = '#FFFFFF';
-  const drawerBg = isDark ? '#1F2937' : '#ECFDF5';       // gray-800 / green-50
-  const activeTint = isDark ? '#A3E635' : '#065F46';     // lime-400 / green-800
-  const inactiveTint = isDark ? '#9CA3AF' : '#4B5563';   // gray-400 / gray-600
+  // Use your centralized color tokens
+  const headerBg = COLORS.primary;
+  const headerTint = COLORS.background.light;
+  const drawerBg = isDark ? COLORS.background.dark : COLORS.background.light;
+  const activeTint = isDark ? COLORS.accent : COLORS.secondary;
+  const inactiveTint = COLORS.muted;
 
   return (
     <Drawer.Navigator
@@ -32,6 +44,7 @@ export default function DrawerNavigator() {
         drawerInactiveTintColor: inactiveTint,
       }}
     >
+      {/* Same drawer screens as before */}
       <Drawer.Screen
         name="My Products"
         component={MyProductsStack}

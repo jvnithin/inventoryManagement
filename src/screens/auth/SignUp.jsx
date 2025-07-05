@@ -14,15 +14,21 @@ import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useAppContext } from '../../context/AppContext';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useColorScheme } from 'nativewind';
 
 const SignUpScreen = () => {
   const { apiUrl } = useAppContext();
   const navigation = useNavigation();
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const handleSignUp = async () => {
     if (!name || !email || !phone || !password) {
@@ -30,7 +36,7 @@ const SignUpScreen = () => {
       return;
     }
     try {
-      const response = await axios.post(`${apiUrl}/api/auth/register`, {
+      await axios.post(`${apiUrl}/api/auth/register`, {
         name,
         email,
         phone,
@@ -38,14 +44,29 @@ const SignUpScreen = () => {
       });
       Alert.alert('Success', 'Account created successfully!');
       navigation.navigate('SignIn');
-    } catch (error) {
-      console.log('Error signing up:', error);
+    } catch {
       Alert.alert('Error', 'Failed to sign up. Please try again.');
     }
   };
 
+  // Tailwind token classes
+  const bg = isDark ? 'bg-background-dark' : 'bg-background-light';
+  const headerAccent = 'text-primary';
+  const textPrimary = isDark ? 'text-background-light' : 'text-secondary';
+  const textSecondary = 'text-muted';
+  const inputBg = isDark ? 'bg-gray-800' : 'bg-background-light';
+  const inputBorder = isDark ? 'border-border-dark' : 'border-border-light';
+  const placeholderColor = '#9CA3AF';
+  const iconColor = '#9CA3AF';
+  const btnActive = 'bg-primary';
+  const btnInactive = 'bg-muted';
+  const btnTextActive = 'text-background-light';
+  const btnTextInactive = 'text-muted';
+
+  const allFilled = name && email && phone && password;
+
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className={`${bg} flex-1`}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
@@ -58,15 +79,15 @@ const SignUpScreen = () => {
           {/* Header Section */}
           <View className="pt-12 pb-8">
             <View className="items-center mb-6">
-              <View className="w-20 h-20 bg-green-100 rounded-full items-center justify-center mb-4">
-                <View className="w-10 h-10 bg-green-500 rounded-full items-center justify-center">
-                  <Text className="text-white text-lg font-bold">+</Text>
+              <View className="w-20 h-20 bg-accent rounded-full items-center justify-center mb-4">
+                <View className="w-10 h-10 bg-primary rounded-full items-center justify-center">
+                  <Text className="text-background-light text-lg font-bold">+</Text>
                 </View>
               </View>
-              <Text className="text-3xl font-bold text-green-500 mb-2">
+              <Text className={`text-3xl font-bold mb-2 ${headerAccent}`}>
                 Create Account
               </Text>
-              <Text className="text-gray-500 text-center text-base">
+              <Text className={`${textSecondary} text-center text-base`}>
                 Join us today and get started
               </Text>
             </View>
@@ -74,16 +95,16 @@ const SignUpScreen = () => {
 
           {/* Form Section */}
           <View className="flex-1">
-            {/* Name Input */}
+            {/* Full Name */}
             <View className="mb-4">
-              <Text className="text-gray-700 text-sm font-medium mb-1">
+              <Text className={`text-muted text-sm font-medium mb-1`}>
                 Full Name
               </Text>
               <View className="relative">
                 <TextInput
-                  className="w-full h-12 px-4 pr-12 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 text-base"
+                  className={`w-full h-12 px-4 pr-12 ${inputBg} border ${inputBorder} rounded-xl ${textPrimary}`}
                   placeholder="Enter your full name"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={placeholderColor}
                   value={name}
                   onChangeText={setName}
                   autoCapitalize="words"
@@ -92,22 +113,22 @@ const SignUpScreen = () => {
                 <Icon
                   name="user"
                   size={20}
-                  color="#9CA3AF"
+                  color={iconColor}
                   style={{ position: 'absolute', right: 16, top: 14 }}
                 />
               </View>
             </View>
 
-            {/* Email Input */}
+            {/* Email Address */}
             <View className="mb-4">
-              <Text className="text-gray-700 text-sm font-medium mb-1">
+              <Text className={`text-muted text-sm font-medium mb-1`}>
                 Email Address
               </Text>
               <View className="relative">
                 <TextInput
-                  className="w-full h-12 px-4 pr-12 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 text-base"
+                  className={`w-full h-12 px-4 pr-12 ${inputBg} border ${inputBorder} rounded-xl ${textPrimary}`}
                   placeholder="Enter your email"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={placeholderColor}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -117,22 +138,22 @@ const SignUpScreen = () => {
                 <Icon
                   name="mail"
                   size={20}
-                  color="#9CA3AF"
+                  color={iconColor}
                   style={{ position: 'absolute', right: 16, top: 14 }}
                 />
               </View>
             </View>
 
-            {/* Phone Input */}
+            {/* Phone Number */}
             <View className="mb-4">
-              <Text className="text-gray-700 text-sm font-medium mb-1">
+              <Text className={`text-muted text-sm font-medium mb-1`}>
                 Phone Number
               </Text>
               <View className="relative">
                 <TextInput
-                  className="w-full h-12 px-4 pr-12 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 text-base"
+                  className={`w-full h-12 px-4 pr-12 ${inputBg} border ${inputBorder} rounded-xl ${textPrimary}`}
                   placeholder="Enter your phone number"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={placeholderColor}
                   value={phone}
                   onChangeText={setPhone}
                   keyboardType="phone-pad"
@@ -142,22 +163,22 @@ const SignUpScreen = () => {
                 <Icon
                   name="phone"
                   size={20}
-                  color="#9CA3AF"
+                  color={iconColor}
                   style={{ position: 'absolute', right: 16, top: 14 }}
                 />
               </View>
             </View>
 
-            {/* Password Input */}
+            {/* Password */}
             <View className="mb-4">
-              <Text className="text-gray-700 text-sm font-medium mb-1">
+              <Text className={`text-muted text-sm font-medium mb-1`}>
                 Password
               </Text>
               <View className="relative">
                 <TextInput
-                  className="w-full h-12 px-4 pr-12 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 text-base"
+                  className={`w-full h-12 px-4 pr-12 ${inputBg} border ${inputBorder} rounded-xl ${textPrimary}`}
                   placeholder="Create a password"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={placeholderColor}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!isPasswordVisible}
@@ -166,46 +187,47 @@ const SignUpScreen = () => {
                 />
                 <TouchableOpacity
                   className="absolute right-4 top-3"
-                  onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+                  onPress={() => setIsPasswordVisible(v => !v)}
                 >
                   {isPasswordVisible ? (
-                    <Icon name="eye" size={20} color="#9CA3AF" />
+                    <Icon name="eye" size={20} color={iconColor} />
                   ) : (
-                    <Icon name="eye-off" size={20} color="#9CA3AF" />
+                    <Icon name="eye-off" size={20} color={iconColor} />
                   )}
                 </TouchableOpacity>
               </View>
-              <Text className="text-xs text-gray-500 mt-1">
+              <Text className="text-xs text-muted mt-1">
                 Password must be at least 8 characters
               </Text>
             </View>
 
-            {/* Sign Up Button */}
+            {/* Create Account Button */}
             <TouchableOpacity
               className={`w-full h-12 rounded-xl items-center justify-center mb-6 ${
-                name && email && phone && password ? 'bg-green-500' : 'bg-gray-300'
+                allFilled ? btnActive : btnInactive
               }`}
               onPress={handleSignUp}
-              disabled={!name || !email || !phone || !password}
+              disabled={!allFilled}
               activeOpacity={0.8}
             >
-              <Text className={`text-base font-bold ${
-                name && email && phone && password ? 'text-white' : 'text-gray-500'
-              }`}>
+              {/* <Text className={`text-base font-bold  ${
+                allFilled ? btnTextActive : btnTextInactive
+              }`}> */}
+                <Text className='text-base font-bold btnTextActive'>
                 Create Account
               </Text>
             </TouchableOpacity>
 
-            {/* Already have an account */}
+            {/* Sign In Link */}
             <View className="flex-row justify-center items-center">
-              <Text className="text-gray-500 text-base">
+              <Text className="text-muted text-base">
                 Already have an account?
               </Text>
               <TouchableOpacity
                 onPress={() => navigation.navigate('SignIn')}
                 className="ml-1"
               >
-                <Text className="text-green-500 font-semibold text-base">
+                <Text className="text-primary font-semibold text-base">
                   Sign In
                 </Text>
               </TouchableOpacity>
