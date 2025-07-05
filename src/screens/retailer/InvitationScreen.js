@@ -21,7 +21,7 @@ const InvitationScreen = ({ route, navigation }) => {
       Alert.alert('Error', 'An error occurred while accepting the invitation.');
     }
   };
-
+  
   const handleReject = () => {
     // TODO: Replace with your reject-invite logic
     Alert.alert('Invitation Rejected', 'You have rejected the invitation.');
