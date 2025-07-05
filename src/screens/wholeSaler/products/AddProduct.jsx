@@ -8,34 +8,38 @@ import {
   Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-
+import { useAppContext } from '../../../context/AppContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 export default function AddProduct({ navigation }) {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [mrp, setMrp] = useState('');
   const [stock, setStock] = useState('');
   const [description, setDescription] = useState('');
+  const {apiUrl,storedProducts,setStoredProducts} = useAppContext();
+  const handleSave = async() => {
+    try {
+      const newProduct = {
+        name,
+        price: parseInt(price),
+        mrp: parseInt(mrp),
+        stock: parseInt(stock),
+        description,
+      };
+      const userToken = await AsyncStorage.getItem('token');
+      const response = await axios.post( `${apiUrl}/api/product/new`, newProduct,{ headers: { Authorization: `Bearer ${userToken}` } });
+      console.log(response.data);
+      const createdProduct = response.data.product;
+      setStoredProducts([...storedProducts, createdProduct]);
+      // TODO: Send to backend here
 
-  const handleSave = () => {
-    if (!name || !price || !mrp || !stock) {
-      Alert.alert('Validation Error', 'Please fill all required fields.');
-      return;
+      Alert.alert('Success', 'Product added successfully!');
+      navigation.goBack();
+    } catch (error) {
+      console.log(error);
+      Alert.alert('Error', 'Failed to add product!');
     }
-
-    const newProduct = {
-      name,
-      price: parseFloat(price),
-      mrp: parseFloat(mrp),
-      stock: parseInt(stock),
-      description,
-    };
-
-    console.log('Saving product:', newProduct);
-
-    // TODO: Send to backend here
-
-    Alert.alert('Success', 'Product added successfully!');
-    navigation.goBack();
   };
 
   return (

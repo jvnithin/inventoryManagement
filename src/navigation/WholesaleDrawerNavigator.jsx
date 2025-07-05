@@ -1,12 +1,14 @@
 import React from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import Icon from 'react-native-vector-icons/Ionicons';
-import HomeScreen from '../screens/wholeSaler/Home';
+import HomeScreen from '../screens/wholeSaler/OrdersDashboard';
 import ProductList from '../screens/wholeSaler/products/ProductList';
 import RetailerList from '../screens/wholeSaler/retailers/RetailerList';
 import Invoices from '../screens/wholeSaler/Invoices';
 import Transactions from '../screens/wholeSaler/Transactions';
 import Settings from '../screens/wholeSaler/Settings';
+import MyProductsStack from './MyProductsStack';
+import OrdersDashboard from '../screens/wholeSaler/OrdersDashboard';
 
 const Drawer = createDrawerNavigator();
 
@@ -23,7 +25,7 @@ export default function DrawerNavigator() {
     >
       <Drawer.Screen
         name="My Products"
-        component={ProductList}
+        component={MyProductsStack}
         options={{
           drawerIcon: ({ color }) => (
             <Icon name="pricetags-outline" size={20} color={color} />
@@ -32,7 +34,7 @@ export default function DrawerNavigator() {
       />
       <Drawer.Screen
         name="Orders Dashboard"
-        component={HomeScreen}
+        component={OrdersDashboard}
         options={{
           drawerIcon: ({ color }) => (
             <Icon name="home-outline" size={20} color={color} />

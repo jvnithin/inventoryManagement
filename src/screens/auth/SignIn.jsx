@@ -12,17 +12,27 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-
+import axios from 'axios';
+import { useAppContext } from '../../context/AppContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const SignInScreen = () => {
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const {apiUrl,setUser} = useAppContext();
+  const handleSignIn = async () => {
+  try {
+    const response = await axios.post(`${apiUrl}/api/auth/login`, { email, password });
+    setUser(response.data.user); 
+    await AsyncStorage.setItem('token', response.data.token);
+  } catch (e) {
+    console.log(e);
+   
+  }
+};
 
-  const handleSignIn = () => {
-    console.log('Sign in with:', { email, password });
-    navigation.navigate('MainApp');
-  };
+
 
   return (
     <SafeAreaView className="flex-1 bg-white">

@@ -1,31 +1,45 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { NavigationContainer } from '@react-navigation/native';
+import { useAppContext } from '../context/AppContext';
 
 import SignIn from '../screens/auth/SignIn';
 import SignUp from '../screens/auth/SignUp';
 import DrawerNavigator from './WholesaleDrawerNavigator';
-import AddProduct from '../screens/wholeSaler/products/AddProduct';
+import RetailerDrawerNavigator from './RetailerDrawerNavigator';
+import LoadingScreen from '../screens/Loading';
+import InvitationScreen from '../screens/retailer/InvitationScreen';
 import RetailerList from '../screens/wholeSaler/retailers/RetailerList';
 import RetailerDetails from '../screens/wholeSaler/retailers/RetailerDetails';
 
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName="SignIn"
-        screenOptions={{ headerShown: false }}
-      >
-        <Stack.Screen name="SignIn" component={SignIn} />
-        <Stack.Screen name="SignUp" component={SignUp} />
-        <Stack.Screen name="MainApp" component={DrawerNavigator} />
-        <Stack.Screen name="AddProduct" component={AddProduct} />
-        <Stack.Screen name="RetailerList" component={RetailerList} />
-        <Stack.Screen name="RetailerDetails" component={RetailerDetails} />
+  const { user, loading } = useAppContext();
+
+  if (loading) {
+    return (
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Loading" component={LoadingScreen} />
       </Stack.Navigator>
-    </NavigationContainer>
+    );
+  }
+
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {!user ? (
+        <>
+          <Stack.Screen name="SignIn" component={SignIn} />
+          <Stack.Screen name="SignUp" component={SignUp} />
+        </>
+      ) : user.role === 'wholesaler' ? (
+        <Stack.Screen name="wholesaler" component={DrawerNavigator} />
+      ) : (
+        <Stack.Screen name="retailer" component={RetailerDrawerNavigator} />
+      )}
+      <Stack.Screen name="Invite" component={InvitationScreen} />
+      <Stack.Screen name="RetailerList" component={RetailerList} />
+      <Stack.Screen name="RetailerDetails" component={RetailerDetails} />
+    </Stack.Navigator>
   );
 };
 
