@@ -15,6 +15,7 @@ import {
   Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useColorScheme } from 'nativewind';
 
 const dummyTransactions = [
   { id: 1, retailerName: 'Retailer A', date: '2025-06-16', amount: 500.0, type: 'Credit', status: 'Completed' },
@@ -33,6 +34,8 @@ export default function Transactions() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   useEffect(() => loadData(), []);
   useEffect(() => {
@@ -64,15 +67,29 @@ export default function Transactions() {
     debit: transactions.filter(t => t.type === 'Debit').reduce((s, t) => s + t.amount, 0),
   };
 
+  const bg = isDark ? 'bg-gray-900' : 'bg-gray-50';
+  const cardBg = isDark ? 'bg-gray-800' : 'bg-white';
+  const textPrimary = isDark ? 'text-gray-100' : 'text-gray-800';
+  const textSecondary = isDark ? 'text-gray-400' : 'text-gray-600';
+  const accentGreen = '#10B981';
+  const accentRed = '#EF4444';
+  const accentYellow = '#D97706';
+  const iconColor = isDark ? '#A3E635' : '#065F46';
+
   const renderItem = ({ item }) => (
     <TouchableOpacity
       activeOpacity={0.8}
-      className="bg-white mx-4 my-2 p-4 rounded-2xl shadow-md flex-row justify-between items-center"
+      className={`
+        mx-4 my-2 p-4 rounded-2xl flex-row justify-between items-center shadow-md
+        ${cardBg}
+      `}
       onPress={() => {}}
     >
       <View className="flex-1 pr-4">
-        <Text className="text-lg font-semibold text-gray-800">{item.retailerName}</Text>
-        <Text className="text-sm text-gray-500 mt-1">Date: {formatDate(item.date)}</Text>
+        <Text className={`text-lg font-semibold ${textPrimary}`}>{item.retailerName}</Text>
+        <Text className={`text-sm mt-1 ${textSecondary}`}>
+          Date: {formatDate(item.date)}
+        </Text>
         <View className="flex-row items-center mt-1">
           <Icon
             name={
@@ -81,9 +98,9 @@ export default function Transactions() {
                 : 'arrow-up-circle-outline'
             }
             size={18}
-            color={item.type === 'Credit' ? '#10B981' : '#EF4444'}
+            color={item.type === 'Credit' ? accentGreen : accentRed}
           />
-          <Text className="text-sm text-gray-800 ml-2">
+          <Text className={`${textPrimary} text-sm ml-2`}>
             {formatCurrency(item.amount)} ({item.type})
           </Text>
         </View>
@@ -104,32 +121,32 @@ export default function Transactions() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50 justify-center items-center">
-        <ActivityIndicator size="large" color="#10B981" />
-        <Text className="mt-3 text-gray-600">Loading transactions...</Text>
+      <SafeAreaView className={`${bg} flex-1 justify-center items-center`}>
+        <ActivityIndicator size="large" color={accentGreen} />
+        <Text className={`${textSecondary} mt-3`}>Loading transactions...</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className={`${bg} flex-1`}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
       >
-        {/* Fixed Header & Search */}
-        <View className="bg-white border-b border-gray-200">
+        {/* Header & Search */}
+        <View className={`${cardBg} border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
           <View className="flex-row justify-between items-center px-4 py-3">
-            <Text className="text-2xl font-bold text-gray-800">Transactions</Text>
-            <TouchableOpacity className="p-2 bg-green-100 rounded-full">
-              <Icon name="filter-outline" size={20} color="#10B981" />
+            <Text className={`text-2xl font-bold ${textPrimary}`}>Transactions</Text>
+            <TouchableOpacity className="p-2 rounded-full" style={{ backgroundColor: '#10B98120' }}>
+              <Icon name="filter-outline" size={20} color={accentGreen} />
             </TouchableOpacity>
           </View>
           <View className="mx-4 mb-3">
-            <View className="flex-row items-center bg-white rounded-full px-4 py-2 shadow-sm">
+            <View className={`flex-row items-center rounded-full px-4 py-2 shadow-sm ${cardBg}`}>
               <Icon name="search-outline" size={20} color="#9CA3AF" />
               <TextInput
-                className="ml-3 flex-1 text-gray-700"
+                className={`ml-3 flex-1 ${textPrimary}`}
                 placeholder="Search by retailer"
                 placeholderTextColor="#9CA3AF"
                 value={search}
@@ -150,19 +167,19 @@ export default function Transactions() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingLeft: 16, paddingBottom: 8 }}
           >
-            <View className="bg-green-600 px-5 py-4 mr-3 rounded-2xl shadow-lg">
+            <View className="px-5 py-4 mr-3 rounded-2xl shadow-lg" style={{ backgroundColor: '#059669' }}>
               <Text className="text-gray-100 text-sm">Total</Text>
               <Text className="text-white text-2xl font-bold mt-1">
                 ₹{summary.total.toFixed(2)}
               </Text>
             </View>
-            <View className="bg-green-100 px-5 py-4 mr-3 rounded-2xl shadow-lg">
+            <View className="px-5 py-4 mr-3 rounded-2xl shadow-lg" style={{ backgroundColor: '#10B98120' }}>
               <Text className="text-green-800 text-sm">Credits</Text>
               <Text className="text-green-900 text-2xl font-bold mt-1">
                 ₹{summary.credit.toFixed(2)}
               </Text>
             </View>
-            <View className="bg-red-100 px-5 py-4 rounded-2xl shadow-lg">
+            <View className="px-5 py-4 rounded-2xl shadow-lg" style={{ backgroundColor: '#EF444420' }}>
               <Text className="text-red-800 text-sm">Debits</Text>
               <Text className="text-red-900 text-2xl font-bold mt-1">
                 ₹{summary.debit.toFixed(2)}
@@ -177,15 +194,13 @@ export default function Transactions() {
           keyExtractor={item => item.id.toString()}
           renderItem={renderItem}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentGreen} colors={[accentGreen]} />
           }
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
-          contentContainerStyle={{ paddingBottom: 20, paddingTop: 0 }}
+          contentContainerStyle={{ paddingBottom: 20 }}
           ListEmptyComponent={
-            <Text className="text-center text-gray-500 mt-8">
-              No transactions found.
-            </Text>
+            <Text className={`${textSecondary} text-center mt-8`}>No transactions found.</Text>
           }
         />
       </KeyboardAvoidingView>

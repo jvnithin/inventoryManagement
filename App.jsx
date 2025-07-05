@@ -6,6 +6,7 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AppProvider } from './src/context/AppContext';
 import { NavigationContainer } from '@react-navigation/native';
+
 import { CartProvider } from './src/context/CartContext';
 const linking = {
   prefixes: ['inventorymanagement://', 'https://inventorymanagement.com'],
@@ -21,7 +22,7 @@ const App = () => {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <CartProvider>
       <AppProvider>
-        <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
+        <StatusBar barStyle="dark-content" backgroundColor="green" />
         <NavigationContainer linking={linking}>
           <AppNavigator />
         </NavigationContainer>

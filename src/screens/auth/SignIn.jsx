@@ -1,3 +1,5 @@
+// SignInScreen.jsx
+
 import React, { useState } from 'react';
 import {
   View,
@@ -15,65 +17,72 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 import { useAppContext } from '../../context/AppContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useColorScheme } from 'nativewind';
+
 const SignInScreen = () => {
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const {apiUrl,setUser} = useAppContext();
+  const { apiUrl, setUser } = useAppContext();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const handleSignIn = async () => {
-  try {
-    const response = await axios.post(`${apiUrl}/api/auth/login`, { email, password });
-    setUser(response.data.user); 
-    await AsyncStorage.setItem('token', response.data.token);
-  } catch (e) {
-    console.log(e);
-   
-  }
-};
+    try {
+      const response = await axios.post(`${apiUrl}/api/auth/login`, { email, password });
+      setUser(response.data.user);
+      await AsyncStorage.setItem('token', response.data.token);
+    } catch (e) {
+      console.log(e);
+    }
+  };
 
-
+  // Dynamic colors
+  const bg = isDark ? 'bg-gray-900' : 'bg-white';
+  const textPrimary = isDark ? 'text-gray-100' : 'text-gray-800';
+  const textSecondary = isDark ? 'text-gray-400' : 'text-gray-500';
+  const inputBg = isDark ? 'bg-gray-800' : 'bg-gray-50';
+  const inputBorder = isDark ? 'border-gray-700' : 'border-gray-200';
+  const placeholderColor = isDark ? '#6B7280' : '#9CA3AF';
+  const iconColor = isDark ? '#9CA3AF' : '#9CA3AF';
+  const btnBg = isDark ? 'bg-green-600' : 'bg-green-500';
+  const shadowColor = isDark ? 'shadow-black/25' : 'shadow-blue-500/25';
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <KeyboardAvoidingView 
+    <SafeAreaView className={`${bg} flex-1`}>
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={{ flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
           className="px-6"
         >
-          {/* Header Section */}
           <View className="flex-1 justify-center items-center pt-16 pb-8">
-            {/* Logo/Icon */}
-            <View className="w-24 h-24 bg-green-100 rounded-full items-center justify-center mb-8">
+            <View className={`w-24 h-24 rounded-full items-center justify-center mb-8 ${isDark ? 'bg-green-800' : 'bg-green-100'}`}>
               <View className="w-12 h-12 bg-green-500 rounded-full items-center justify-center">
                 <Text className="text-white text-xl font-bold">S</Text>
               </View>
             </View>
 
-            {/* Welcome Text */}
-            <Text className="text-3xl font-bold text-gray-800 mb-2">
-              Welcome Back
-            </Text>
-            <Text className="text-gray-500 text-center text-base mb-8">
+            <Text className={`text-3xl font-bold mb-2 ${textPrimary}`}>Welcome Back</Text>
+            <Text className={`text-center text-base mb-8 ${textSecondary}`}>
               Sign in to your account to continue
             </Text>
 
-            {/* Form Section */}
             <View className="w-full space-y-4">
-              {/* Email Input */}
+              {/* Email */}
               <View>
-                <Text className="text-gray-700 text-sm font-medium mb-2 ml-1">
+                <Text className={`text-sm font-medium mb-2 ml-1 ${textPrimary}`}>
                   Email Address
                 </Text>
                 <View className="relative">
                   <TextInput
-                    className="w-full h-14 px-4 pr-12 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 text-base focus:border-blue-500 focus:bg-white"
+                    className={`w-full h-14 px-4 pr-12 rounded-xl text-base ${inputBg} border ${inputBorder} ${textPrimary}`}
                     placeholder="Enter your email"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={placeholderColor}
                     value={email}
                     onChangeText={setEmail}
                     keyboardType="email-address"
@@ -81,21 +90,21 @@ const SignInScreen = () => {
                     autoCorrect={false}
                   />
                   <View className="absolute right-4 top-4">
-                    <Icon name="mail" size={20} color="#9CA3AF" />
+                    <Icon name="mail" size={20} color={iconColor} />
                   </View>
                 </View>
               </View>
 
-              {/* Password Input */}
+              {/* Password */}
               <View>
-                <Text className="text-gray-700 text-sm font-medium mb-2 ml-1">
+                <Text className={`text-sm font-medium mb-2 ml-1 ${textPrimary}`}>
                   Password
                 </Text>
                 <View className="relative">
                   <TextInput
-                    className="w-full h-14 px-4 pr-12 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 text-base focus:border-blue-500 focus:bg-white"
+                    className={`w-full h-14 px-4 pr-12 rounded-xl text-base ${inputBg} border ${inputBorder} ${textPrimary}`}
                     placeholder="Enter your password"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={placeholderColor}
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={!isPasswordVisible}
@@ -107,81 +116,48 @@ const SignInScreen = () => {
                     onPress={() => setIsPasswordVisible(!isPasswordVisible)}
                   >
                     {isPasswordVisible ? (
-                      <Icon name="eye" size={20} color="#9CA3AF" />
+                      <Icon name="eye" size={20} color={iconColor} />
                     ) : (
-                      <Icon name="eye-off" size={20} color="#9CA3AF" />
+                      <Icon name="eye-off" size={20} color={iconColor} />
                     )}
                   </TouchableOpacity>
                 </View>
               </View>
 
-              {/* Forgot Password */}
-              {/* <TouchableOpacity className="self-end">
-                <Text className="text-blue-500 text-sm font-medium">
-                  Forgot Password?
-                </Text>
-              </TouchableOpacity> */}
-
-              {/* Sign In Button */}
+              {/* Sign In */}
               <TouchableOpacity
-                className="w-full h-14 bg-green-500 rounded-xl items-center justify-center mt-6 shadow-lg shadow-blue-500/25"
+                className={`w-full h-14 rounded-xl items-center justify-center mt-6 ${btnBg} shadow-lg ${shadowColor}`}
                 onPress={handleSignIn}
                 activeOpacity={0.8}
               >
-                <Text className="text-white text-base font-semibold">
-                  Sign In
-                </Text>
+                <Text className="text-white text-base font-semibold">Sign In</Text>
               </TouchableOpacity>
 
               {/* Divider */}
               <View className="flex-row items-center my-6">
                 <View className="flex-1 h-px bg-gray-200" />
-                <Text className="mx-4 text-gray-500 text-sm">or</Text>
+                <Text className={`mx-4 text-sm ${textSecondary}`}>or</Text>
                 <View className="flex-1 h-px bg-gray-200" />
               </View>
 
-              {/* Social Login Buttons */}
-              {/* <View className="space-y-3">
-                <TouchableOpacity
-                  className="w-full h-12 bg-white border border-gray-200 rounded-xl flex-row items-center justify-center space-x-3"
-                  activeOpacity={0.7}
-                >
-                  <Icon name="google" size={20} color="#EA4335" />
-                  <Text className="text-gray-700 font-medium">
-                    Continue with Google
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  className="w-full h-12 bg-white border border-gray-200 rounded-xl flex-row items-center justify-center space-x-3"
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="logo-apple" size={22} color="#000" />
-                  <Text className="text-gray-700 font-medium">
-                    Continue with Apple
-                  </Text>
-                </TouchableOpacity>
-              </View> */}
+              {/* Sign Up Link */}
               <View className="flex-row justify-center items-center">
-              <Text className="text-gray-500 text-base">
-                Don't have an account?
-              </Text>
-              <TouchableOpacity
-                onPress={() => navigation.navigate('SignUp')}
-                className="ml-1"
-              >
-                <Text className="text-green-500 font-semibold text-base">
-                  Sign Up
+                <Text className={`text-base ${textSecondary}`}>
+                  Don't have an account?
                 </Text>
-              </TouchableOpacity>
-            </View>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('SignUp')}
+                  className="ml-1"
+                >
+                  <Text className="text-green-500 font-semibold text-base">
+                    Sign Up
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
 
-          {/* Footer */}
-          <View className="pb-8">
-            
-          </View>
+          <View className="pb-8" />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
