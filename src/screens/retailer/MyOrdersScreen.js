@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import { useAppContext } from '../../context/AppContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -46,6 +46,41 @@ export default function MyOrdersScreen() {
     fetchOrders();
   }, []);
 
+  const handleCancelOrder = async (order_id) => {
+    Alert.alert(
+      'Cancel Order',
+      'Are you sure you want to cancel this order?',
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Yes',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              const token = await AsyncStorage.getItem('token');
+              // Adjust the API endpoint as per your backend
+              const response = await axios.put(
+                `${apiUrl}/api/retailer/cancel-order/${order_id}`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              console.log(response.data);
+              await fetchOrders();
+              Alert.alert('Order Cancelled', 'Your order has been cancelled.');
+            } catch (error) {
+              console.error('Error cancelling order:', error);
+              Alert.alert('Error', 'Failed to cancel order.');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   const renderOrderItem = ({ item }) => (
     <View className="mb-4 p-4 rounded-xl bg-green-50 shadow shadow-black/5">
       <Text className="font-bold text-lg text-green-800">
@@ -88,6 +123,15 @@ export default function MyOrdersScreen() {
           ? item.order_items.price * item.order_items.quantity
           : 0}
       </Text>
+      {/* Cancel Order Button */}
+      {item.status === 'pending' && (
+        <TouchableOpacity
+          className="mt-4 bg-red-500 rounded-lg py-2 px-4 self-start"
+          onPress={() => handleCancelOrder(item.order_id)}
+        >
+          <Text className="text-white font-bold text-base">Cancel Order</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 

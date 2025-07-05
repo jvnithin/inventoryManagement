@@ -11,14 +11,16 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useAppContext } from '../../../context/AppContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+
 export default function AddProduct({ navigation }) {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [mrp, setMrp] = useState('');
   const [stock, setStock] = useState('');
   const [description, setDescription] = useState('');
-  const {apiUrl,storedProducts,setStoredProducts} = useAppContext();
-  const handleSave = async() => {
+  const { apiUrl, storedProducts, setStoredProducts } = useAppContext();
+
+  const handleSave = async () => {
     try {
       const newProduct = {
         name,
@@ -28,12 +30,13 @@ export default function AddProduct({ navigation }) {
         description,
       };
       const userToken = await AsyncStorage.getItem('token');
-      const response = await axios.post( `${apiUrl}/api/product/new`, newProduct,{ headers: { Authorization: `Bearer ${userToken}` } });
-      console.log(response.data);
+      const response = await axios.post(
+        `${apiUrl}/api/product/new`,
+        newProduct,
+        { headers: { Authorization: `Bearer ${userToken}` } }
+      );
       const createdProduct = response.data.product;
-      setStoredProducts([...storedProducts, createdProduct]);
-      // TODO: Send to backend here
-
+      setStoredProducts([...(storedProducts || []), createdProduct]);
       Alert.alert('Success', 'Product added successfully!');
       navigation.goBack();
     } catch (error) {
@@ -44,15 +47,12 @@ export default function AddProduct({ navigation }) {
 
   return (
     <ScrollView className="flex-1 bg-white px-4 pt-6">
-      {/* Header */}
       <View className="flex-row items-center mb-6">
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-2">
           <Icon name="arrow-back" size={24} color="#065F46" />
         </TouchableOpacity>
         <Text className="text-2xl font-bold text-green-800">Add Product</Text>
       </View>
-
-      {/* Form Fields */}
       <View className="space-y-4">
         <View>
           <Text className="text-gray-600 mb-1">Product Name *</Text>
@@ -63,7 +63,6 @@ export default function AddProduct({ navigation }) {
             onChangeText={setName}
           />
         </View>
-
         <View className="flex-row justify-between space-x-4">
           <View className="flex-1">
             <Text className="text-gray-600 mb-1">Price (₹) *</Text>
@@ -86,7 +85,6 @@ export default function AddProduct({ navigation }) {
             />
           </View>
         </View>
-
         <View>
           <Text className="text-gray-600 mb-1">Stock Quantity *</Text>
           <TextInput
@@ -97,7 +95,6 @@ export default function AddProduct({ navigation }) {
             onChangeText={setStock}
           />
         </View>
-
         <View>
           <Text className="text-gray-600 mb-1">Description</Text>
           <TextInput
@@ -108,8 +105,6 @@ export default function AddProduct({ navigation }) {
             onChangeText={setDescription}
           />
         </View>
-
-        {/* Submit Button */}
         <TouchableOpacity
           onPress={handleSave}
           className="bg-green-700 rounded-xl py-3 mt-4"

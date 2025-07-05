@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useAppContext } from '../../context/AppContext';
 
 const formatAddress = (address) => {
-  // Adjust according to your address object structure
   if (!address) return '';
   return [
     address.street,
@@ -25,118 +24,82 @@ const formatAddress = (address) => {
     .join(', ');
 };
 
-const CartScreen = ({ navigation, route }) => {
-  const { apiUrl, user } = useAppContext();
-  const [cart, setCart] = useState(
-    route?.params?.cart || []
-  );
-
-  // For rapid increment/decrement
+const CartScreen = ({ navigation }) => {
+  const { apiUrl, user, retailerCart, setRetailerCart } = useAppContext();
   const intervalRef = useRef(null);
 
-  const updateQuantity = (product_id, newQty) => {
-    if (isNaN(newQty) || newQty < 1) return;
-    setCart(prev =>
-      prev.map(item =>
-        item.product_id === product_id
-          ? { ...item, quantity: Number(newQty) }
-          : item,
-      ),
-    );
-  };
-  const fetchCart = async () => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        Alert.alert('Error', 'Authentication token not found.');
-        return;
+  // Fetch cart from backend on mount and whenever CartScreen is focused
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          Alert.alert('Error', 'Authentication token not found.');
+          return;
+        }
+        const response = await axios.get(`${apiUrl}/api/retailer/get-cart`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const newCart = {};
+        response.data.forEach(item => {
+          if (newCart[item.product_id]) {
+            newCart[item.product_id].quantity += item.quantity;
+          } else {
+            newCart[item.product_id] = item;
+          }
+        });
+        setRetailerCart(Object.values(newCart));
+      } catch (error) {
+        console.error('Error fetching cart:', error);
       }
-      const response = await axios.get(`${apiUrl}/api/retailer/get-cart`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      console.log(response);
-      setCart(response.data || []);
-    } catch (error) {
-      console.error('Error fetching cart:', error);
-    }
-  }
-  useEffect(()=>{
+    };
     fetchCart();
-  },[]);
-  const handleCheckout = async () => {
+    // Optionally, add a listener for navigation focus to refresh cart
+    const unsubscribe = navigation.addListener('focus', fetchCart);
+    return unsubscribe;
+  }, [apiUrl, setRetailerCart, navigation]);
+
+  // Update quantity in context and backend
+  const updateQuantity = async (product_id, newQty) => {
+    if (isNaN(newQty) || newQty < 1) return;
+    // Update in backend
     try {
       const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        Alert.alert('Error', 'Authentication token not found.');
-        return;
-      }
-      
-      if (!user?.address || Object.keys(user.address).length === 0) {
-        Alert.alert('Error', 'Please update your address.', [
-          { text: 'OK', onPress: () => navigation.navigate('Profile') },
-        ]);
-        return;
-      }
-
-      const response = await axios.post(
-        `${apiUrl}/api/retailer/place-order`,
-        { cart, address: user.address },
+      await axios.post(
+        `${apiUrl}/api/retailer/update-cart`,
+        { product_id, quantity: newQty },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
-      if (response.status === 200) {
-        setCart([]);
-        Alert.alert('Success', 'Your order has been placed successfully!');
-        navigation.navigate("My Orders");
-      } else {
-        throw new Error('Failed to place order');
-      }
+      // Fetch updated cart
+      const response = await axios.get(`${apiUrl}/api/retailer/get-cart`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const newCart = {};
+      response.data.forEach(item => {
+        if (newCart[item.product_id]) {
+          newCart[item.product_id].quantity += item.quantity;
+        } else {
+          newCart[item.product_id] = item;
+        }
+      });
+      setRetailerCart(Object.values(newCart));
     } catch (error) {
-      console.error("Error placing order", error);
-      Alert.alert('Error', 'Failed to place order. Please try again.');
+      console.error('Error updating quantity:', error);
     }
-  };
-
-  // Show address and ask user to confirm before checkout
-  const confirmAddressAndCheckout = () => {
-    if (!user?.address || Object.keys(user.address).length === 0) {
-      Alert.alert('Error', 'Please update your address.', [
-        { text: 'OK', onPress: () => navigation.navigate('Profile') },
-      ]);
-      return;
-    }
-
-    const formattedAddress = formatAddress(user.address);
-
-    Alert.alert(
-      'Confirm Address',
-      `Your order will be delivered to:\n\n${formattedAddress}\n\nDo you want to proceed or update your address?`,
-      [
-        { text: 'Change Address', onPress: () => navigation.navigate('Profile'), style: 'default' },
-        { text: 'Proceed', onPress: handleCheckout, style: 'default' },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
   };
 
   const handlePressAndHold = (product_id, type) => {
-    // type: "inc" or "dec"
     intervalRef.current = setInterval(() => {
-      setCart(prev =>
-        prev.map(item => {
-          if (item.product_id === product_id) {
-            let newQty =
-              type === 'inc'
-                ? item.quantity + 1
-                : Math.max(1, item.quantity - 1);
-            return { ...item, quantity: newQty };
-          }
-          return item;
-        }),
-      );
-    }, 120); // adjust speed here
+      const item = retailerCart.find(i => i.product_id === product_id);
+      if (!item) return;
+      let newQty =
+        type === 'inc'
+          ? item.quantity + 1
+          : Math.max(1, item.quantity - 1);
+      updateQuantity(product_id, newQty);
+    }, 120);
   };
 
   const handlePressOut = () => {
@@ -150,6 +113,19 @@ const CartScreen = ({ navigation, route }) => {
         `${apiUrl}/api/retailer/delete-from-cart/${product_id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      // Fetch updated cart
+      const response = await axios.get(`${apiUrl}/api/retailer/get-cart`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const newCart = {};
+      response.data.forEach(item => {
+        if (newCart[item.product_id]) {
+          newCart[item.product_id].quantity += item.quantity;
+        } else {
+          newCart[item.product_id] = item;
+        }
+      });
+      setRetailerCart(Object.values(newCart));
     } catch (error) {
       console.log('Error removing from cart:', error);
     }
@@ -166,19 +142,66 @@ const CartScreen = ({ navigation, route }) => {
           style: 'destructive',
           onPress: async () => {
             await deleteFromCart(product_id);
-            setCart(prev =>
-              prev.filter(item => item.product_id !== product_id),
-            );
           }
         },
       ],
     );
   };
 
-  const cartTotal = cart.reduce(
+  const cartTotal = retailerCart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
+
+  const handleCheckout = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert('Error', 'Authentication token not found.');
+        return;
+      }
+      if (!user?.address || Object.keys(user.address).length === 0) {
+        Alert.alert('Error', 'Please update your address.', [
+          { text: 'OK', onPress: () => navigation.navigate('Profile') },
+        ]);
+        return;
+      }
+      const response = await axios.post(
+        `${apiUrl}/api/retailer/place-order`,
+        { cart: retailerCart, address: user.address },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.status === 200) {
+        setRetailerCart([]);
+        Alert.alert('Success', 'Your order has been placed successfully!');
+        navigation.navigate("My Orders");
+      } else {
+        throw new Error('Failed to place order');
+      }
+    } catch (error) {
+      console.error("Error placing order", error);
+      Alert.alert('Error', 'Failed to place order. Please try again.');
+    }
+  };
+
+  const confirmAddressAndCheckout = () => {
+    if (!user?.address || Object.keys(user.address).length === 0) {
+      Alert.alert('Error', 'Please update your address.', [
+        { text: 'OK', onPress: () => navigation.navigate('Profile') },
+      ]);
+      return;
+    }
+    const formattedAddress = formatAddress(user.address);
+    Alert.alert(
+      'Confirm Address',
+      `Your order will be delivered to:\n\n${formattedAddress}\n\nDo you want to proceed or update your address?`,
+      [
+        { text: 'Change Address', onPress: () => navigation.navigate('Profile'), style: 'default' },
+        { text: 'Proceed', onPress: handleCheckout, style: 'default' },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
 
   const renderItem = ({ item }) => (
     <View
@@ -195,7 +218,6 @@ const CartScreen = ({ navigation, route }) => {
         elevation: 2,
       }}
     >
-      {/* Product Name and Price */}
       <View style={{ flex: 1 }}>
         <Text style={{ fontWeight: 'bold', fontSize: 17, color: '#065F46' }}>
           {item.name}
@@ -207,8 +229,6 @@ const CartScreen = ({ navigation, route }) => {
           Wholesaler ID: {item.wholesaler_id}
         </Text>
       </View>
-
-      {/* Quantity Controls */}
       <View
         style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10 }}
       >
@@ -258,8 +278,6 @@ const CartScreen = ({ navigation, route }) => {
           <Icon name="add" size={20} color="#16A34A" />
         </TouchableOpacity>
       </View>
-
-      {/* Delete Button */}
       <TouchableOpacity
         onPress={() => removeItem(item.product_id)}
         style={{
@@ -277,9 +295,8 @@ const CartScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
       <View style={{ flex: 1, padding: 18 }}>
-        {/* Cart List */}
         <FlatList
-          data={cart}
+          data={retailerCart}
           keyExtractor={item => item.product_id?.toString()}
           renderItem={renderItem}
           ListEmptyComponent={
@@ -292,9 +309,7 @@ const CartScreen = ({ navigation, route }) => {
           contentContainerStyle={{ paddingBottom: 80 }}
           showsVerticalScrollIndicator={false}
         />
-
-        {/* Cart Total and Checkout */}
-        {cart.length > 0 && (
+        {retailerCart.length > 0 && (
           <View
             style={{
               position: 'absolute',

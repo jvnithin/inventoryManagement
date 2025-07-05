@@ -16,7 +16,7 @@ import FloatingActionButton from '../../../components/FloatingActionButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useAppContext } from '../../../context/AppContext';
-import { emit, getSocket } from '../../../services/socketService';
+import { emit } from '../../../services/socketService';
 
 const { width } = Dimensions.get('window');
 const numColumns = 2;
@@ -26,10 +26,8 @@ const itemWidth =
   (width - sidePadding - (numColumns - 1) * spacing) / numColumns;
 
 export default function MyProductsScreen({ navigation }) {
-  const { apiUrl,user } = useAppContext();
-  
+  const { apiUrl, user, storedProducts, setStoredProducts } = useAppContext();
   const [isGrid, setIsGrid] = useState(true);
-  const [storedProducts, setStoredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [colorScheme, setColorScheme] = useState(Appearance.getColorScheme());
@@ -39,28 +37,19 @@ export default function MyProductsScreen({ navigation }) {
       setColorScheme(colorScheme);
     });
     emit("wholesaler-connect", { message: "wholesaler connected", id: user.userId });
-    
     return () => subscription.remove();
   }, []);
 
   const fetchProducts = async () => {
-    console.log("Fetching products");
     try {
       setLoading(true);
-      // if (storedProducts !== null) {
-      //   setLoading(false);
-      //   return;
-      // }
       const userToken = await AsyncStorage.getItem('token');
-      
       const response = await axios.get(
         `${apiUrl}/api/wholesaler/get-products/me`,
         { headers: { Authorization: `Bearer ${userToken}` } },
       );
-      console.log(response);
-      setStoredProducts(response.data);
+      setStoredProducts(response.data || []);
     } catch (e) {
-      console.log(e);
       setStoredProducts([]);
     } finally {
       setLoading(false);
@@ -70,6 +59,7 @@ export default function MyProductsScreen({ navigation }) {
 
   useEffect(() => {
     fetchProducts();
+    // eslint-disable-next-line
   }, []);
 
   const onRefresh = useCallback(() => {
@@ -80,53 +70,45 @@ export default function MyProductsScreen({ navigation }) {
   const handleAddProduct = () => navigation.navigate('AddProduct');
 
   const handleEdit = item => {
-    // Navigate to edit screen or open modal
     navigation.navigate('EditProduct', { product: item });
   };
 
-
-    const handleDelete = item => {
-      // Show confirmation popup before deleting
-      Alert.alert(
-        'Delete Product',
-        `Are you sure you want to delete "${item.name}"?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                setLoading(true);
-                const userToken = await AsyncStorage.getItem('token');
-                
-                await axios.delete(
-                  `${apiUrl}/api/product/delete/${item.product_id}`,
-                  { headers: { Authorization: `Bearer ${userToken}` } },
-                );
-
-                setStoredProducts(
-                  storedProducts.filter(p => p.product_id !== item.product_id),
-                );
-              } catch (e) {
-                console.log(e);
-                Alert.alert('Error', 'Failed to delete product.');
-              } finally {
-                setLoading(false);
-              }
-            },
+  const handleDelete = item => {
+    Alert.alert(
+      'Delete Product',
+      `Are you sure you want to delete "${item.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              const userToken = await AsyncStorage.getItem('token');
+              await axios.delete(
+                `${apiUrl}/api/product/delete/${item.product_id}`,
+                { headers: { Authorization: `Bearer ${userToken}` } },
+              );
+              setStoredProducts(
+                storedProducts.filter(p => p.product_id !== item.product_id),
+              );
+            } catch (e) {
+              Alert.alert('Error', 'Failed to delete product.');
+            } finally {
+              setLoading(false);
+            }
           },
-        ],
-        { cancelable: true },
-      );
-    };
-  
+        },
+      ],
+      { cancelable: true },
+    );
+  };
 
   // Theme styles
   const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
   const styles = themedStyles(theme);
 
-  // Render product item
   const renderItem = ({ item }) => (
     <View
       style={[styles.card, isGrid ? { width: itemWidth } : { width: '100%' }]}
@@ -177,8 +159,6 @@ export default function MyProductsScreen({ navigation }) {
           />
         </View>
       </View>
-
-      {/* Loading indicator */}
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#22c55e" />
@@ -209,12 +189,13 @@ export default function MyProductsScreen({ navigation }) {
           }
         />
       )}
-
-      {/* Floating Action Button */}
       <FloatingActionButton onPress={handleAddProduct} color="#22c55e" />
     </View>
   );
 }
+
+// ... keep your themedStyles, lightTheme, darkTheme as before
+
 
 // Theme colors
 const lightTheme = {

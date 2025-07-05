@@ -42,8 +42,8 @@ const OrdersDashboard = () => {
 const markAsDelivered = async (orderId) => {
   try {
     const token = await AsyncStorage.getItem('token');
-    await axios.put(
-      `${apiUrl}/api/wholesaler/orders/${orderId}/status`,
+    const response = await axios.put(
+      `${apiUrl}/api/wholesaler/update-order-status/${orderId}`,
       { status: 'delivered' },
       {
         headers: {
@@ -51,7 +51,7 @@ const markAsDelivered = async (orderId) => {
         },
       }
     );
-
+    console.log(response.data);
     // Update local state
     setOrders((prevOrders) =>
       prevOrders.map((order) =>
@@ -154,22 +154,7 @@ const markAsDelivered = async (orderId) => {
           )}
           {orders.map(order => (
             <View key={order.order_id} style={styles.orderItem}>
-              {order.status !== 'delivered' && (
-                <TouchableOpacity
-                  onPress={() => markAsDelivered(order.order_id)}
-                  style={{
-                    marginTop: 10,
-                    backgroundColor: '#10B981',
-                    paddingVertical: 10,
-                    borderRadius: 8,
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{ color: 'white', fontWeight: 'bold' }}>
-                    Mark as Delivered
-                  </Text>
-                </TouchableOpacity>
-              )}
+              
 
               <Text style={styles.retailerName}>Order #{order.order_id}</Text>
               <Text style={styles.itemText}>
@@ -223,6 +208,22 @@ const markAsDelivered = async (orderId) => {
                   ? order.order_items.price * order.order_items.quantity
                   : 0}
               </Text>
+              {order.status !== 'delivered' && (
+                <TouchableOpacity
+                  onPress={() => markAsDelivered(order.order_id)}
+                  style={{
+                    marginTop: 10,
+                    backgroundColor: '#10B981',
+                    paddingVertical: 10,
+                    borderRadius: 8,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{ color: 'white', fontWeight: 'bold' }}>
+                    Mark as Delivered
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           ))}
         </ScrollView>

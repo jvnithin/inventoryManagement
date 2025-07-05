@@ -8,7 +8,8 @@ export const AppProvider = ({ children }) => {
   const apiUrl = 'http://192.168.1.4:8000';
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [storedProducts,setStoredProducts] = useState([]);
+  const [storedProducts, setStoredProducts] = useState([]); // always default to []
+  const [retailerCart, setRetailerCart] = useState([]);
   const getUserDetails = async () => {
     setLoading(true);
     try {
@@ -41,9 +42,20 @@ export const AppProvider = ({ children }) => {
     getUserDetails();
   }, []);
 
-  return (
+ return (
     <AppContext.Provider
-      value={{ apiUrl, user, setUser, loading, handleLogout, getUserDetails }}
+      value={{
+        apiUrl,
+        user,
+        setUser,
+        loading,
+        handleLogout,
+        getUserDetails,
+        retailerCart,
+        setRetailerCart,
+        storedProducts,
+        setStoredProducts,
+      }}
     >
       {children}
     </AppContext.Provider>

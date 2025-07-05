@@ -16,16 +16,13 @@ import { useAppContext } from '../../context/AppContext';
 import { emit } from '../../services/socketService';
 
 export default function WholesalerProducts({ route, navigation }) {
-  const { apiUrl,user } = useAppContext();
+  const { apiUrl, user, retailerCart, setRetailerCart } = useAppContext();
   const { wholesaler } = route.params;
-  const [cart, setCart] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [quantityModal, setQuantityModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState('1');
-
-  // Toast state
   const [toastVisible, setToastVisible] = useState(false);
   const [toastText, setToastText] = useState('');
   const toastTimeoutRef = useRef();
@@ -47,13 +44,37 @@ export default function WholesalerProducts({ route, navigation }) {
     }
   };
 
+  // Fetch cart from backend and update context
+  const fetchCart = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await axios.get(`${apiUrl}/api/retailer/get-cart`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const newCart = {};
+      response.data.forEach(item => {
+        if (newCart[item.product_id]) {
+          newCart[item.product_id].quantity += item.quantity;
+        } else {
+          newCart[item.product_id] = item;
+        }
+      });
+      setRetailerCart(Object.values(newCart));
+    } catch (error) {
+      console.error('Error fetching cart:', error);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
+    fetchCart();
     emit("retailer-connect", { message: "retailer connected", id: user.userId });
     return () => {
-      // Clean up timeout on unmount
       if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
     };
+    // eslint-disable-next-line
   }, []);
 
   // Add to cart with quantity
@@ -66,37 +87,30 @@ export default function WholesalerProducts({ route, navigation }) {
     }
     try {
       const token = await AsyncStorage.getItem('token');
-      console.log(product);
-      const response = await axios.post(
+      await axios.post(
         `${apiUrl}/api/retailer/add-to-cart`,
-        { product_id: product.product_id, quantity: numQty,name:product.name,wholesaler_id:product.wholesaler_id,price:product.price,addedAt:Date.now() },
+        {
+          product_id: product.product_id,
+          quantity: numQty,
+          name: product.name,
+          wholesaler_id: product.wholesaler_id,
+          price: product.price,
+          addedAt: Date.now(),
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      console.log(response);
-      setCart(prevCart => {
-        const existing = prevCart.find(item => item.product_id === product.product_id);
-        if (existing) {
-          return prevCart.map(item =>
-            item.product_id === product.product_id
-              ? { ...item, quantity: item.quantity + numQty }
-              : item
-          );
-        } else {
-          return [...prevCart, { ...product, quantity: numQty }];
-        }
-      });
+      await fetchCart(); // Update context cart from backend
       setQuantity('1');
       setQuantityModal(false);
       setToastText(`${product.name} x${qty} added to your cart!`);
       setToastVisible(true);
       if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-      toastTimeoutRef.current = setTimeout(() => setToastVisible(false), 5000); // 5 seconds
+      toastTimeoutRef.current = setTimeout(() => setToastVisible(false), 3000);
     } catch (e) {
       Alert.alert('Error', 'Failed to add to cart.');
     }
   };
 
-  // Open modal to ask for quantity
   const handleAddPress = (product) => {
     setSelectedProduct(product);
     setQuantity('1');
