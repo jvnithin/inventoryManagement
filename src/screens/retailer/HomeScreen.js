@@ -16,6 +16,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppContext } from '../../context/AppContext';
 import { useColorScheme } from 'nativewind';
+import { emit } from '../../services/socketService';
 
 export default function HomeScreen({ navigation }) {
   const {user}=useAppContext();
@@ -35,6 +36,7 @@ export default function HomeScreen({ navigation }) {
         headers: { Authorization: `Bearer ${token}` },
       });
       setWholesalers(response.data || []);
+      emit("retailer-login",{id:user.retailer_id});
     } catch (e) {
       setError('Failed to load wholesalers. Please try again.');
       setWholesalers([]);
