@@ -116,7 +116,7 @@ export default function MyProductsScreen({ navigation }) {
       <Text style={styles.productName}>{item.name}</Text>
       <Text style={styles.stock}>Stock: {item.stock}</Text>
       <Text style={styles.price}>
-        ₹{item.price} <Text style={styles.mrp}>₹{item.mrp}</Text>
+        Price : ₹{item.price} <Text style={styles.mrp}>₹{item.mrp}</Text>
       </Text>
       <Text style={styles.description} numberOfLines={2}>
         {item.description}
@@ -141,7 +141,10 @@ export default function MyProductsScreen({ navigation }) {
   return (
     <View style={[styles.container]}>
       {/* Header */}
-      <View style={styles.headerRow}>
+      <View style={styles.headerRow} >
+        <View >
+          {/* <Text style={styles.headerText} className='px-1'>My Products</Text> */}
+        </View>
         <View style={styles.toggleRow}>
           <Icon
             name="list-outline"
@@ -246,7 +249,7 @@ const themedStyles = theme =>
     headerRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      alignItems: 'center',
+      alignItems: 'right',
       marginBottom: 18,
     },
     headerText: {
