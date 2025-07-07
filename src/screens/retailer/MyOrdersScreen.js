@@ -1,42 +1,29 @@
-// src/screens/MyOrdersScreen.js
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { SafeAreaView, ActivityIndicator, Alert } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import PendingOrders from './PendingOrders';
 import DeliveredOrders from './DeliveredOrders';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppContext } from '../../context/AppContext';
 import { useColorScheme } from 'nativewind';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 const Tab = createMaterialTopTabNavigator();
 
 export default function MyOrdersScreen() {
-  const { apiUrl } = useAppContext();
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { orders, setOrders, fetchRetailerOrders, apiUrl } = useAppContext();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-
-  const fetchOrders = async () => {
-    setLoading(true);
-    try {
-      const token = await AsyncStorage.getItem('token');
-      const res = await axios.get(`${apiUrl}/api/retailer/get-orders`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setOrders(res.data || []);
-    } catch {
-      setOrders([]);
-      Alert.alert('Error', 'Unable to fetch orders');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    const load = async () => {
+      setLoading(true);
+      await fetchRetailerOrders();
+      setLoading(false);
+    };
+    load();
+  }, [fetchRetailerOrders]);
 
   const handleCancelOrder = useCallback(async order_id => {
     Alert.alert(
@@ -57,7 +44,7 @@ export default function MyOrdersScreen() {
                 { headers: { Authorization: `Bearer ${token}` } }
               );
               Alert.alert('Order Cancelled', 'Your order has been cancelled.');
-              fetchOrders();
+              await fetchRetailerOrders();
             } catch {
               Alert.alert('Error', 'Failed to cancel order.');
             } finally {
@@ -67,7 +54,7 @@ export default function MyOrdersScreen() {
         },
       ]
     );
-  }, [apiUrl]);
+  }, [apiUrl, fetchRetailerOrders]);
 
   if (loading) {
     return (

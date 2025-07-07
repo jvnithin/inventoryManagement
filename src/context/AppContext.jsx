@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { on, off, getSocket } from '../services/socketService';
+import { on, off, getSocket, emit } from '../services/socketService';
 
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
   const apiUrl = 'http://192.168.1.44:8000';
   // const apiUrl = 'https://backendinventory-4lnp.onrender.com';
+
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [storedProducts, setStoredProducts] = useState([]);
@@ -16,9 +17,8 @@ export const AppProvider = ({ children }) => {
   const [retailers, setRetailers] = useState([]);
   const [notifications, setNotifications] = useState([]);
 
-  // Socket event handler functions
-  const handleOrderCancelled = (data) => {
-    console.log('Order Cancelled:', data);
+  // --- Socket event handlers ---
+  const handleOrderCancelled = useCallback((data) => {
     setOrders((orders) =>
       orders.map((order) =>
         order.order_id === data.order_id ? { ...order, status: 'cancelled' } : order
@@ -28,19 +28,17 @@ export const AppProvider = ({ children }) => {
       ...notifications,
       { type: 'order-cancelled', data, read: false },
     ]);
-  };
+  }, []);
 
-  const handleNewOrder = (data) => {
-    console.log('New Order:', data);
+  const handleNewOrder = useCallback((data) => {
     setOrders((orders) => [...orders, data]);
     setNotifications((notifications) => [
       ...notifications,
       { type: 'new-order', data, read: false },
     ]);
-  };
+  }, []);
 
-  const handleOrderCompleted = (data) => {
-    console.log('Order Completed:', data);
+  const handleOrderCompleted = useCallback((data) => {
     setOrders((orders) =>
       orders.map((order) =>
         order.order_id === data.order_id ? { ...order, status: 'delivered' } : order
@@ -50,12 +48,10 @@ export const AppProvider = ({ children }) => {
       ...notifications,
       { type: 'order-completed', data, read: false },
     ]);
-  };
+  }, []);
 
-  // Register and clean up socket listeners
+  // --- Register and clean up socket listeners ---
   useEffect(() => {
-    const socket = getSocket();
-    console.log(socket);
     on('order-cancelled', handleOrderCancelled);
     on('new-order', handleNewOrder);
     on('order-completed', handleOrderCompleted);
@@ -65,10 +61,31 @@ export const AppProvider = ({ children }) => {
       off('new-order', handleNewOrder);
       off('order-completed', handleOrderCompleted);
     };
-  }, []);
+  }, [handleOrderCancelled, handleNewOrder, handleOrderCompleted]);
 
-  // Fetch user details
-  const getUserDetails = async () => {
+  // --- Socket connect event: emit appropriate event after socket and user are ready ---
+  useEffect(() => {
+    const socket = getSocket();
+
+    const handleSocketConnect = () => {
+      if (user && user.userId && user.role) {
+        if (user.role === 'retailer') {
+          emit('wholesaler-connect', { id: user.userId });
+        } else if (user.role === 'wholesaler') {
+          emit('retailer-connect', { id: user.userId });
+        }
+      }
+    };
+
+    socket.on('connect', handleSocketConnect);
+
+    return () => {
+      socket.off('connect', handleSocketConnect);
+    };
+  }, [user]);
+
+  // --- Fetch user details ---
+  const getUserDetails = useCallback(async () => {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem('token');
@@ -85,9 +102,9 @@ export const AppProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [apiUrl]);
 
-  // Fetch all orders
+  // --- Fetch all wholesaler orders ---
   const fetchOrders = useCallback(async () => {
     try {
       const token = await AsyncStorage.getItem('token');
@@ -101,7 +118,21 @@ export const AppProvider = ({ children }) => {
     }
   }, [apiUrl]);
 
-  // Fetch all retailers
+  // --- Fetch all retailer orders ---
+  const fetchRetailerOrders = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await axios.get(`${apiUrl}/api/retailer/get-orders`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setOrders(response.data || []);
+    } catch (error) {
+      setOrders([]);
+      console.log('Error fetching retailer orders:', error);
+    }
+  }, [apiUrl]);
+
+  // --- Fetch all retailers ---
   const fetchRetailers = useCallback(async () => {
     try {
       const token = await AsyncStorage.getItem('token');
@@ -115,7 +146,8 @@ export const AppProvider = ({ children }) => {
     }
   }, [apiUrl]);
 
-  const handleLogout = async () => {
+  // --- Logout handler ---
+  const handleLogout = useCallback(async () => {
     await AsyncStorage.removeItem('token');
     setUser(null);
     setOrders([]);
@@ -123,11 +155,12 @@ export const AppProvider = ({ children }) => {
     setRetailerCart([]);
     setRetailers([]);
     setNotifications([]);
-  };
+  }, []);
 
+  // --- On mount: fetch user details ---
   useEffect(() => {
     getUserDetails();
-  }, []);
+  }, [getUserDetails]);
 
   return (
     <AppContext.Provider
@@ -145,6 +178,7 @@ export const AppProvider = ({ children }) => {
         orders,
         setOrders,
         fetchOrders,
+        fetchRetailerOrders,
         retailers,
         setRetailers,
         fetchRetailers,

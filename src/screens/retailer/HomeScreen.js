@@ -29,6 +29,8 @@ export default function HomeScreen({ navigation }) {
   const isDark = colorScheme === 'dark';
 
   const fetchWholesalers = async () => {
+    // emit("retailer-login",{id:user.retailer_id});
+
     setError(null);
     try {
       const token = await AsyncStorage.getItem('token');
@@ -46,8 +48,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   useEffect(() => {
-      emit("retailer-login",{id:user.retailer_id});
-
+    emit("retailer-connect",{id:user.userId});
     setLoading(true);
     fetchWholesalers();
   }, []);

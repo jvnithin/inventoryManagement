@@ -76,7 +76,7 @@ export default function CartScreen({ navigation }) {
     };
 
     fetchCart();
-    emit('retailer-connect', { id: user.userId });
+    // emit('retailer-connect', { id: user.userId });
     return () => clearTimeout(toastTimeoutRef.current);
   }, [apiUrl, user.userId, setRetailerCart]);
 
