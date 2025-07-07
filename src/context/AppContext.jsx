@@ -6,8 +6,8 @@ import { on, off, getSocket, emit } from '../services/socketService';
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  const apiUrl = 'http://192.168.1.44:8000';
-  // const apiUrl = 'https://backendinventory-4lnp.onrender.com';
+  // const apiUrl = 'http://192.168.1.44:8000';
+  const apiUrl = 'https://backendinventory-4lnp.onrender.com';
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,7 +26,7 @@ export const AppProvider = ({ children }) => {
     );
     setNotifications((notifications) => [
       ...notifications,
-      { type: 'order-cancelled', data, read: false,for:"wholesaler" },
+      { type: 'order-cancelled', data:{order_id:data.order_id}, read: false,for:"wholesaler" },
     ]);
   }, []);
 
@@ -34,7 +34,7 @@ export const AppProvider = ({ children }) => {
     setOrders((orders) => [...orders, data]);
     setNotifications((notifications) => [
       ...notifications,
-      { type: 'new-order', data, read: false,for:"wholesaler" },
+      { type: 'new-order', data:{order_id:data.order_id}, read: false,for:"wholesaler" },
     ]);
   }, []);
 
@@ -46,10 +46,17 @@ export const AppProvider = ({ children }) => {
     );
     setNotifications((notifications) => [
       ...notifications,
-      { type: 'order-completed', data, read: false,for:"retailer" },
+      { type: 'order-completed', data:{order_id:data.order_id}, read: false,for:"retailer" },
     ]);
   }, []);
 
+  const handleNewRetailer = useCallback((data) => {
+    setRetailers((retailers) => [...retailers, data]);
+    setNotifications((notifications) => [
+      ...notifications,
+      { type: 'new-retailer', data:{retailer_id:data.user_id,name:data.name}, read: false,for:"retailer" },
+    ])
+  })
   // --- Register and clean up socket listeners ---
   useEffect(() => {
     const socket = getSocket();
@@ -57,11 +64,12 @@ export const AppProvider = ({ children }) => {
     on('order-cancelled', handleOrderCancelled);
     on('new-order', handleNewOrder);
     on('order-complete', handleOrderCompleted);
-
+    on('new-retailer', handleNewRetailer);
     return () => {
       off('order-cancelled', handleOrderCancelled);
       off('new-order', handleNewOrder);
       off('order-complete', handleOrderCompleted);
+      off('new-retailer', handleNewRetailer);
     };
   }, [handleOrderCancelled, handleNewOrder, handleOrderCompleted]);
 

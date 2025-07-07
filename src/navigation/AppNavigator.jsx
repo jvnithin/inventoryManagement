@@ -44,7 +44,7 @@ const AppNavigator = () => {
       <Stack.Screen
         name="Notifications"
         component={NotificationScreen}
-        options={{ headerShown: true, title: 'Notifications' }} // Show header for notifications
+        options={{ headerShown: false, title: 'Notifications' }} // Show header for notifications
       />
     </Stack.Navigator>
   );

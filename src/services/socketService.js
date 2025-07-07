@@ -4,7 +4,7 @@ let socket;
 
 export const getSocket = () => {
   if (!socket) {
-    socket = io('http://192.168.1.44:8000', {
+    socket = io('https://backendinventory-4lnp.onrender.com', {
       transports: ['websocket'],
     });
   }
