@@ -7,14 +7,15 @@ import {
   TouchableOpacity,
   Image,
   Alert,
-  StatusBar
+  StatusBar,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useAppContext } from '../../../context/AppContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from 'nativewind';
 
-const fallbackImage = 'https://ui-avatars.com/api/?background=16A34A&color=fff&name=R';
+const fallbackImage =
+  'https://ui-avatars.com/api/?background=16A34A&color=fff&name=R';
 
 export default function RetailerDetails({ route, navigation }) {
   const { retailer } = route.params;
@@ -34,12 +35,18 @@ export default function RetailerDetails({ route, navigation }) {
   // --- CENTRAL: Filter orders for this retailer/customer ---
   console.log(orders);
   console.log(retailer.user_id);
-  const retailerOrders = orders.filter(order => String(order.user_id) === String(retailer.user_id));
+  const retailerOrders = orders.filter(
+    order => String(order.user_id) === String(retailer.user_id),
+  );
   console.log(retailerOrders);
   const totalOrders = retailerOrders.length;
-  const totalValue = retailerOrders.reduce((sum, order) =>
-    sum + (order.order_items ? order.order_items.price * order.order_items.quantity : 0),
-    0
+  const totalValue = retailerOrders.reduce(
+    (sum, order) =>
+      sum +
+      (order.order_items
+        ? order.order_items.price * order.order_items.quantity
+        : 0),
+    0,
   );
 
   const handleSaveRetailer = async () => {
@@ -49,7 +56,7 @@ export default function RetailerDetails({ route, navigation }) {
       await axios.put(
         `${apiUrl}/api/wholesaler/edit-retailer/${retailer.user_id}`,
         { name, phone: contact, address, photo },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       Alert.alert('Success', 'Retailer updated successfully!');
       navigation.goBack();
@@ -74,28 +81,37 @@ export default function RetailerDetails({ route, navigation }) {
 
   return (
     <View className={`${bg} flex-1`}>
-      <StatusBar backgroundColor={accent} barStyle={isDark ? 'light-content' : 'dark-content'} />
+      <StatusBar
+        backgroundColor={accent}
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+      />
       <SafeAreaView className={`${bg} flex-1`}>
         {/* Header */}
-        <View className="flex-row items-center px-4 pt-4 pb-3" style={{
-          backgroundColor: accent,
-          shadowColor: '#000',
-          shadowOpacity: 0.1,
-          shadowRadius: 6,
-          elevation: 3,
-        }}>
+        <View
+          className="flex-row items-center px-4 pt-4 pb-3"
+          style={{
+            backgroundColor: accent,
+            shadowColor: '#000',
+            shadowOpacity: 0.1,
+            shadowRadius: 6,
+            elevation: 3,
+          }}
+        >
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             className="mr-3 bg-green-100 rounded-full p-2"
           >
             <Icon name="arrow-back" size={24} color="#065F46" />
           </TouchableOpacity>
-          <Text className="flex-1 text-white text-xl font-bold" numberOfLines={1}>
+          <Text
+            className="flex-1 text-white text-xl font-bold"
+            numberOfLines={1}
+          >
             {retailer.name}
           </Text>
         </View>
 
-        <ScrollView className="px-4 py-4">
+        <ScrollView className="px-4 py-4 ">
           {/* Profile */}
           <View className="flex-row items-center mb-6">
             <Image
@@ -175,48 +191,64 @@ export default function RetailerDetails({ route, navigation }) {
               </View>
             </View>
           </View>
+          <TouchableOpacity
+            onPress={handleSaveRetailer}
+            className=" mb-8 bg-green-700 rounded-lg py-3 shadow-lg"
+          >
+            <Text className="text-center text-white font-semibold text-base">
+              Save Changes
+            </Text>
+          </TouchableOpacity>
 
           {/* Orders List */}
           <Text className="text-lg font-bold mb-3" style={{ color: accent }}>
             Recent Orders
           </Text>
           {retailerOrders.length === 0 && (
-            <Text className={`text-center ${label}`}>No orders for this retailer.</Text>
+            <Text className={`text-center ${label}`}>
+              No orders for this retailer.
+            </Text>
           )}
-          {retailerOrders.map((order) => (
-            <View
-              key={order.order_id}
-              className={`${cardBg} rounded-lg p-4 mb-3 border ${
-                isDark ? 'border-gray-700' : 'border-gray-200'
-              }`}
-            >
-              <Text className="font-semibold mb-1" style={{ color: accent }}>
-                {order.created_at ? new Date(order.created_at).toLocaleDateString() : ''}
-              </Text>
-              <Text className={`text-sm ${label} mb-1`}>
-                Items:{' '}
-                <Text className={`font-medium ${text}`}>
-                  {order.order_items ? order.order_items.name : ''} x {order.order_items ? order.order_items.quantity : ''}
+          <View className='pb-5'>
+
+          {retailerOrders
+            .filter(order => order.status === 'delivered') // only delivered orders
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) // most recent first
+            .slice(0, 5) // take only the top 5
+            .map(order => (
+              <View
+                key={order.order_id}
+                className={`${cardBg} rounded-lg p-4 mb-3 border ${
+                  isDark ? 'border-gray-700' : 'border-gray-200'
+                }`}
+              >
+                <Text className="font-semibold mb-1" style={{ color: accent }}>
+                  {order.created_at
+                    ? new Date(order.created_at).toLocaleDateString()
+                    : ''}
                 </Text>
-              </Text>
-              <View className="flex-row items-center">
-                <Icon name="pricetag" size={16} color={accent} />
-                <Text className="ml-1 font-bold" style={{ color: accent }}>
-                  ₹{order.order_items ? order.order_items.price * order.order_items.quantity : 0}
+                <Text className={`text-sm ${label} mb-1`}>
+                  Items:{' '}
+                  <Text className={`font-medium ${text}`}>
+                    {order.order_items?.name || ''} x{' '}
+                    {order.order_items?.quantity || ''}
+                  </Text>
                 </Text>
+                <View className="flex-row items-center">
+                  <Icon name="pricetag" size={16} color={accent} />
+                  <Text className="ml-1 font-bold" style={{ color: accent }}>
+                    ₹
+                    {order.order_items
+                      ? order.order_items.price * order.order_items.quantity
+                      : 0}
+                  </Text>
+                </View>
               </View>
-            </View>
-          ))}
+            ))}
+          </View>
 
           {/* Save Button */}
-          <TouchableOpacity
-            onPress={handleSaveRetailer}
-            className="mt-6 mb-8 bg-green-700 rounded-lg py-3 shadow-lg"
-          >
-            <Text className="text-center text-white font-semibold text-base">
-              Save Changes
-            </Text>
-          </TouchableOpacity>
+          
         </ScrollView>
       </SafeAreaView>
     </View>

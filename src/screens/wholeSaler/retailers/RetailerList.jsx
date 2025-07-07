@@ -144,7 +144,7 @@ export default function RetailerList({ navigation }) {
   return (
     <View className={`${screenBg} flex-1 px-4 pt-6`}>
       {/* Header */}
-      <View className="flex-row justify-between items-center mb-4">
+      {/* <View className="flex-row justify-between items-center mb-4">
         <Text
           className={`
             text-2xl font-bold
@@ -153,7 +153,7 @@ export default function RetailerList({ navigation }) {
         >
           Retailers
         </Text>
-      </View>
+      </View> */}
 
       {/* List */}
       <FlatList

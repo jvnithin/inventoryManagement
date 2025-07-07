@@ -64,7 +64,7 @@ export default function DrawerNavigator() {
         }}
       />
       <Drawer.Screen
-        name="Retailer List"
+        name="Retailers List"
         component={RetailerList}
         options={{
           drawerIcon: ({ color }) => (

@@ -108,7 +108,7 @@ export default function PendingOrders({ orders, markAsDelivered }) {
                     Order Id : {order.order_id}
                   </Text>
                   <Text
-                    className={`px-2 py-1 text-xs font-bold rounded-full ${
+                    className={`px-3 py-1 text-xs font-bold rounded-full ${
                       order.status === 'pending'
                         ? isDark
                           ? 'bg-yellow-700 text-yellow-100'
@@ -169,7 +169,7 @@ export default function PendingOrders({ orders, markAsDelivered }) {
                 ${isDark ? 'bg-green-600' : 'bg-green-700'}
               `}
                   >
-                    <Text className="text-white font-semibold">
+                    <Text className="text-white font-semibold px-1">
                       Mark As Delivered
                     </Text>
                   </TouchableOpacity>
