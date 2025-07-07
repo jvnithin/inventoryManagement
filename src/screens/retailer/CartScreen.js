@@ -27,7 +27,7 @@ const formatAddress = (address) => {
 };
 
 export default function CartScreen({ navigation }) {
-  const { apiUrl, user, retailerCart, setRetailerCart } = useAppContext();
+  const { apiUrl, user, retailerCart, setRetailerCart,setOrders } = useAppContext();
   const [loading, setLoading] = useState(true);
   const [quantityModal, setQuantityModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -188,6 +188,7 @@ export default function CartScreen({ navigation }) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (response.status === 200) {
+        setOrders(prevOrders => [...prevOrders, ...retailerCart]);
         setRetailerCart([]);
         Alert.alert('Success', 'Your order has been placed successfully!');
         navigation.navigate("My Orders");

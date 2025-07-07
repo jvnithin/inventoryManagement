@@ -52,14 +52,16 @@ export const AppProvider = ({ children }) => {
 
   // --- Register and clean up socket listeners ---
   useEffect(() => {
+    const socket = getSocket();
+    console.log(socket);
     on('order-cancelled', handleOrderCancelled);
     on('new-order', handleNewOrder);
-    on('order-completed', handleOrderCompleted);
+    on('order-complete', handleOrderCompleted);
 
     return () => {
       off('order-cancelled', handleOrderCancelled);
       off('new-order', handleNewOrder);
-      off('order-completed', handleOrderCompleted);
+      off('order-complete', handleOrderCompleted);
     };
   }, [handleOrderCancelled, handleNewOrder, handleOrderCompleted]);
 

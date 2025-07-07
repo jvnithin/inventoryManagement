@@ -59,7 +59,7 @@ export default function HomeScreen({ navigation }) {
   }, []);
 
   const handleWholesalerPress = wholesaler => {
-    console.log("Home : ",wholesaler)
+    // console.log("Home : ",wholesaler)
     navigation.navigate('WholeSalerProducts', { wholesaler });
   };
 
