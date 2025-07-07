@@ -92,7 +92,8 @@ export const AppProvider = ({ children }) => {
     setOrders([]);
     setStoredProducts([]);
     setRetailerCart([]);
-    setRetailers([]); // <-- Reset retailers on logout
+    setRetailers([]); 
+    setNotifications([]);
   };
 
   useEffect(() => {

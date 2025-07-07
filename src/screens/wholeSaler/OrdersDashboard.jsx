@@ -52,7 +52,8 @@ export default function OrdersDashboard() {
         )
       );
       Alert.alert('Success', `Order #${orderId} marked delivered`);
-    } catch {
+    } catch(e) {
+      console.log(e);
       Alert.alert('Error', 'Failed to update order');
     }
   };
