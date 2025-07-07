@@ -40,11 +40,12 @@ export default function OrdersDashboard() {
   const markAsDelivered = async orderId => {
     try {
       const token = await AsyncStorage.getItem('token');
-      await axios.put(
+      const res=await axios.put(
         `${apiUrl}/api/wholesaler/update-order-status/${orderId}`,
         { status: 'delivered' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      console.log("wholesaler",res)
       setOrders(os =>
         os.map(o =>
           o.order_id === orderId ? { ...o, status: 'delivered' } : o
