@@ -155,7 +155,7 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         )}
       />
-      <TouchableOpacity
+      {/* <TouchableOpacity
         onPress={() => {
           const inviteCode = user?.group_code || 'YOUR_GROUP_CODE';
           const link = `inventorymanagement://invite/${inviteCode}`;
@@ -180,7 +180,7 @@ export default function HomeScreen({ navigation }) {
       >
         <Icon name="add" size={24} color="#fff" />
         <Text style={{ color: '#fff', marginLeft: 8, fontWeight: '600' }}>Invite</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
   );
 }
