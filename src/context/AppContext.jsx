@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { on } from '../services/socketService';
+import { on, off } from '../services/socketService';
 
 const AppContext = createContext();
 
@@ -13,30 +13,57 @@ export const AppProvider = ({ children }) => {
   const [storedProducts, setStoredProducts] = useState([]);
   const [retailerCart, setRetailerCart] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [retailers, setRetailers] = useState([]); // <-- Add this line
-  const [notifications,setNotifications] = useState([]);
-  // Socket event handlers for orders (as before)
-  on('order-cancelled', (data) => {
-    console.log('Order Cancelled:', data);
-    setOrders((orders) => orders.map((order) =>
-      order.order_id === data.order_id ? { ...order, status: 'cancelled' } : order
-    ));
-    setNotifications((notifications) => [...notifications, { type: 'order-cancelled', data, read: false }]);
-  });
+  const [retailers, setRetailers] = useState([]);
+  const [notifications, setNotifications] = useState([]);
 
-  on('new-order', (data) => {
+  // Socket event handler functions
+  const handleOrderCancelled = (data) => {
+    console.log('Order Cancelled:', data);
+    setOrders((orders) =>
+      orders.map((order) =>
+        order.order_id === data.order_id ? { ...order, status: 'cancelled' } : order
+      )
+    );
+    setNotifications((notifications) => [
+      ...notifications,
+      { type: 'order-cancelled', data, read: false },
+    ]);
+  };
+
+  const handleNewOrder = (data) => {
     console.log('New Order:', data);
     setOrders((orders) => [...orders, data]);
-    setNotifications((notifications) => [...notifications, { type: 'new-order', data, read: false }]);
-  });
+    setNotifications((notifications) => [
+      ...notifications,
+      { type: 'new-order', data, read: false },
+    ]);
+  };
 
-  on('order-completed', (data) => {
+  const handleOrderCompleted = (data) => {
     console.log('Order Completed:', data);
-    setOrders((orders) => orders.map((order) =>
-      order.order_id === data.order_id ? { ...order, status: 'delivered' } : order
-    ));
-    setNotifications((notifications) => [...notifications, { type: 'order-completed', data, read: false }]);
-  });
+    setOrders((orders) =>
+      orders.map((order) =>
+        order.order_id === data.order_id ? { ...order, status: 'delivered' } : order
+      )
+    );
+    setNotifications((notifications) => [
+      ...notifications,
+      { type: 'order-completed', data, read: false },
+    ]);
+  };
+
+  // Register and clean up socket listeners
+  useEffect(() => {
+    on('order-cancelled', handleOrderCancelled);
+    on('new-order', handleNewOrder);
+    on('order-completed', handleOrderCompleted);
+
+    return () => {
+      off('order-cancelled', handleOrderCancelled);
+      off('new-order', handleNewOrder);
+      off('order-completed', handleOrderCompleted);
+    };
+  }, []);
 
   // Fetch user details
   const getUserDetails = async () => {
@@ -92,7 +119,7 @@ export const AppProvider = ({ children }) => {
     setOrders([]);
     setStoredProducts([]);
     setRetailerCart([]);
-    setRetailers([]); 
+    setRetailers([]);
     setNotifications([]);
   };
 
@@ -116,9 +143,11 @@ export const AppProvider = ({ children }) => {
         orders,
         setOrders,
         fetchOrders,
-        retailers,         // <-- Expose retailers
-        setRetailers,      // <-- Expose setRetailers
-        fetchRetailers,    // <-- Expose fetchRetailers
+        retailers,
+        setRetailers,
+        fetchRetailers,
+        notifications,
+        setNotifications,
       }}
     >
       {children}
