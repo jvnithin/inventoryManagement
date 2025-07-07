@@ -10,6 +10,7 @@ import LoadingScreen from '../screens/Loading';
 import InvitationScreen from '../screens/retailer/InvitationScreen';
 import RetailerList from '../screens/wholeSaler/retailers/RetailerList';
 import RetailerDetails from '../screens/wholeSaler/retailers/RetailerDetails';
+import NotificationScreen from '../screens/NotificationScreen'; // <-- Import your NotificationScreen
 
 const Stack = createNativeStackNavigator();
 
@@ -20,8 +21,7 @@ const AppNavigator = () => {
     return (
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Loading" component={LoadingScreen} />
-      <Stack.Screen name="Invite" component={InvitationScreen} />
-
+        <Stack.Screen name="Invite" component={InvitationScreen} />
       </Stack.Navigator>
     );
   }
@@ -41,6 +41,11 @@ const AppNavigator = () => {
       <Stack.Screen name="Invite" component={InvitationScreen} />
       <Stack.Screen name="RetailerList" component={RetailerList} />
       <Stack.Screen name="RetailerDetails" component={RetailerDetails} />
+      <Stack.Screen
+        name="Notifications"
+        component={NotificationScreen}
+        options={{ headerShown: true, title: 'Notifications' }} // Show header for notifications
+      />
     </Stack.Navigator>
   );
 };

@@ -11,6 +11,7 @@ import MyOrdersScreen from '../screens/retailer/MyOrdersScreen';
 import InvoicesScreen from '../screens/retailer/InvoicesScreen';
 import TransactionsScreen from '../screens/retailer/TransactionsScreen';
 import Profile from '../screens/retailer/Profile';
+import NotificationIcon from '../components/NotificationComponents';
 
 const Drawer = createDrawerNavigator();
 
@@ -33,6 +34,7 @@ export default function DrawerNavigator() {
         drawerStyle: { backgroundColor: drawerBg },
         drawerActiveTintColor: activeTint,
         drawerInactiveTintColor: inactiveTint,
+        headerRight: () => <NotificationIcon />
       }}
     >
       <Drawer.Screen

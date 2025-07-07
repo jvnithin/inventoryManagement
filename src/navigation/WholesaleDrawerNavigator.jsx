@@ -8,6 +8,7 @@ import RetailerList from '../screens/wholeSaler/retailers/RetailerList';
 import Invoices from '../screens/wholeSaler/Invoices';
 import Transactions from '../screens/wholeSaler/Transactions';
 import Settings from '../screens/wholeSaler/Settings';
+import NotificationIcon from '../components/NotificationComponents';
 
 // Define your colors object matching tailwind.config.js
 const COLORS = {
@@ -42,6 +43,7 @@ export default function DrawerNavigator() {
         drawerStyle: { backgroundColor: drawerBg },
         drawerActiveTintColor: activeTint,
         drawerInactiveTintColor: inactiveTint,
+        headerRight: () => <NotificationIcon />,
       }}
     >
       {/* Same drawer screens as before */}

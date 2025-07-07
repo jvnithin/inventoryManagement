@@ -26,7 +26,7 @@ export const AppProvider = ({ children }) => {
     );
     setNotifications((notifications) => [
       ...notifications,
-      { type: 'order-cancelled', data, read: false },
+      { type: 'order-cancelled', data, read: false,for:"wholesaler" },
     ]);
   }, []);
 
@@ -34,7 +34,7 @@ export const AppProvider = ({ children }) => {
     setOrders((orders) => [...orders, data]);
     setNotifications((notifications) => [
       ...notifications,
-      { type: 'new-order', data, read: false },
+      { type: 'new-order', data, read: false,for:"wholesaler" },
     ]);
   }, []);
 
@@ -46,7 +46,7 @@ export const AppProvider = ({ children }) => {
     );
     setNotifications((notifications) => [
       ...notifications,
-      { type: 'order-completed', data, read: false },
+      { type: 'order-completed', data, read: false,for:"retailer" },
     ]);
   }, []);
 
