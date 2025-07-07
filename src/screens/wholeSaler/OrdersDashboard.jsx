@@ -1,71 +1,56 @@
-// OrdersDashboard.jsx
-
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SafeAreaView, ActivityIndicator, Alert } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import PendingOrders from './PendingOrders';
 import CompletedOrders from './CompletedOrders';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 import { useAppContext } from '../../context/AppContext';
 import Geolocation from '@react-native-community/geolocation';
 import { useColorScheme } from 'nativewind';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 const Tab = createMaterialTopTabNavigator();
 
 export default function OrdersDashboard() {
-  const { apiUrl, user } = useAppContext();
+  const { apiUrl, orders, setOrders, fetchOrders } = useAppContext();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-
-  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchOrders = async () => {
-    setLoading(true);
-    try {
-      const token = await AsyncStorage.getItem('token');
-      const res = await axios.get(`${apiUrl}/api/wholesaler/get-orders`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setOrders(res.data || []);
-    } catch {
-      Alert.alert('Error', 'Unable to fetch orders');
-      setOrders([]);
-    } finally {
+  // Use fetchOrders from context
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      await fetchOrders();
       setLoading(false);
-    }
-  };
+    };
+    load();
+    Geolocation.getCurrentPosition(() => {}, () => {}, {
+      enableHighAccuracy: false,
+      timeout: 20000,
+      maximumAge: 10000,
+    });
+  }, [fetchOrders]);
 
+  // Optionally, move this to AppContext as well
   const markAsDelivered = async orderId => {
     try {
       const token = await AsyncStorage.getItem('token');
-      const res=await axios.put(
+      await axios.put(
         `${apiUrl}/api/wholesaler/update-order-status/${orderId}`,
         { status: 'delivered' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      console.log("wholesaler",res)
       setOrders(os =>
         os.map(o =>
           o.order_id === orderId ? { ...o, status: 'delivered' } : o
         )
       );
       Alert.alert('Success', `Order #${orderId} marked delivered`);
-    } catch(e) {
-      console.log(e);
+    } catch (e) {
       Alert.alert('Error', 'Failed to update order');
     }
   };
-
-  useEffect(() => {
-    fetchOrders();
-    Geolocation.getCurrentPosition(() => {}, () => {}, {
-      enableHighAccuracy: false,
-      timeout: 20000,
-      maximumAge: 10000,
-    });
-  }, []);
 
   if (loading) {
     return (
@@ -87,13 +72,11 @@ export default function OrdersDashboard() {
     >
       <Tab.Navigator
         screenOptions={{
-          tabBarActiveTintColor: '#16A34A',            // bg-primary
-          tabBarInactiveTintColor: '#6B7280',         // text-muted
+          tabBarActiveTintColor: '#16A34A',
+          tabBarInactiveTintColor: '#6B7280',
           tabBarIndicatorStyle: { backgroundColor: '#16A34A' },
           tabBarStyle: {
-            backgroundColor: isDark
-              ? '#1F2937'                          // background.dark
-              : '#F8FAFC',                         // background.light
+            backgroundColor: isDark ? '#1F2937' : '#F8FAFC',
           },
           tabBarLabelStyle: { fontWeight: '600' },
         }}
