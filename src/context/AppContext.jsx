@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { on, off } from '../services/socketService';
+import { on, off, getSocket } from '../services/socketService';
 
 const AppContext = createContext();
 
@@ -54,6 +54,8 @@ export const AppProvider = ({ children }) => {
 
   // Register and clean up socket listeners
   useEffect(() => {
+    const socket = getSocket();
+    console.log(socket);
     on('order-cancelled', handleOrderCancelled);
     on('new-order', handleNewOrder);
     on('order-completed', handleOrderCompleted);
