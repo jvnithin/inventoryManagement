@@ -6,27 +6,36 @@ import { on } from '../services/socketService';
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  const apiUrl = 'http://192.168.1.4:8000';
+  const apiUrl = 'http://192.168.1.44:8000';
+  // const apiUrl = 'https://backendinventory-4lnp.onrender.com';
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [storedProducts, setStoredProducts] = useState([]);
   const [retailerCart, setRetailerCart] = useState([]);
   const [orders, setOrders] = useState([]);
   const [retailers, setRetailers] = useState([]); // <-- Add this line
-
+  const [notifications,setNotifications] = useState([]);
   // Socket event handlers for orders (as before)
   on('order-cancelled', (data) => {
+    console.log('Order Cancelled:', data);
     setOrders((orders) => orders.map((order) =>
       order.order_id === data.order_id ? { ...order, status: 'cancelled' } : order
     ));
+    setNotifications((notifications) => [...notifications, { type: 'order-cancelled', data, read: false }]);
   });
+
   on('new-order', (data) => {
+    console.log('New Order:', data);
     setOrders((orders) => [...orders, data]);
+    setNotifications((notifications) => [...notifications, { type: 'new-order', data, read: false }]);
   });
+
   on('order-completed', (data) => {
+    console.log('Order Completed:', data);
     setOrders((orders) => orders.map((order) =>
       order.order_id === data.order_id ? { ...order, status: 'delivered' } : order
     ));
+    setNotifications((notifications) => [...notifications, { type: 'order-completed', data, read: false }]);
   });
 
   // Fetch user details

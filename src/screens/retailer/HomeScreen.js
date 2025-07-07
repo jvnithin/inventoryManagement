@@ -36,7 +36,6 @@ export default function HomeScreen({ navigation }) {
         headers: { Authorization: `Bearer ${token}` },
       });
       setWholesalers(response.data || []);
-      emit("retailer-login",{id:user.retailer_id});
     } catch (e) {
       setError('Failed to load wholesalers. Please try again.');
       setWholesalers([]);
@@ -47,6 +46,8 @@ export default function HomeScreen({ navigation }) {
   };
 
   useEffect(() => {
+      emit("retailer-login",{id:user.retailer_id});
+
     setLoading(true);
     fetchWholesalers();
   }, []);

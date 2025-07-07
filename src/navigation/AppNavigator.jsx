@@ -20,6 +20,8 @@ const AppNavigator = () => {
     return (
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Loading" component={LoadingScreen} />
+      <Stack.Screen name="Invite" component={InvitationScreen} />
+
       </Stack.Navigator>
     );
   }
