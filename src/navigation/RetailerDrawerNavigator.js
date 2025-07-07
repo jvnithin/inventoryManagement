@@ -1,5 +1,3 @@
-// src/navigation/DrawerNavigator.jsx
-
 import React from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -15,19 +13,35 @@ import NotificationIcon from '../components/NotificationComponents';
 
 const Drawer = createDrawerNavigator();
 
-export default function DrawerNavigator() {
+export default function DrawerNavigator({ initialRouteName }) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
   // Color tokens
   const headerBg = '#16A34A';
   const headerTint = '#FFFFFF';
-  const drawerBg = isDark ? '#1F2937' : '#ECFDF5';       // gray-800 / green-50
-  const activeTint = isDark ? '#A3E635' : '#065F46';     // lime-400 / green-800
-  const inactiveTint = isDark ? '#9CA3AF' : '#4B5563';   // gray-400 / gray-600
+  const drawerBg = isDark ? '#1F2937' : '#ECFDF5';
+  const activeTint = isDark ? '#A3E635' : '#065F46';
+  const inactiveTint = isDark ? '#9CA3AF' : '#4B5563';
+
+  // List of valid route names
+  const validRoutes = [
+    'Home',
+    'Cart',
+    'My Orders',
+    'Invoices',
+    'Transactions',
+    'Profile'
+  ];
+
+  // Choose initial route: use provided if valid, else default to 'Home'
+  const initialRoute = validRoutes.includes(initialRouteName)
+    ? initialRouteName
+    : 'Home';
 
   return (
     <Drawer.Navigator
+      initialRouteName={initialRoute}
       screenOptions={{
         headerStyle: { backgroundColor: headerBg },
         headerTintColor: headerTint,

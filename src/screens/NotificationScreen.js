@@ -77,6 +77,9 @@ export default function NotificationScreen() {
     setNotifications(prev =>
       prev.map((n, i) => (i === index ? { ...n, read: true } : n)),
     );
+    if(notifications[index]?.type === 'new-order' || notifications[index]?.type === 'order-cancelled') navigation.navigate('wholesaler',{screen:'Orders Dashboard'});
+    else if(notifications[index]?.type === 'new-retailer') navigation.navigate('retailer',{screen:'Retailers List'});
+    else if(notifications[index]?.type === 'order-complete') navigation.navigate('retailer',{screen:'My Orders'});
   };
 
   // Render each notification item
@@ -127,7 +130,7 @@ export default function NotificationScreen() {
       style={{ paddingTop: insets.top }}
     >
       <StatusBar
-        barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
+        barStyle="dark-content"
         backgroundColor="transparent"
         translucent
       />

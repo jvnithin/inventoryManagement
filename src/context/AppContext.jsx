@@ -15,7 +15,9 @@ export const AppProvider = ({ children }) => {
   const [retailerCart, setRetailerCart] = useState([]);
   const [orders, setOrders] = useState([]);
   const [retailers, setRetailers] = useState([]);
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState([
+   
+  ]);
 
   // --- Socket event handlers ---
   const handleOrderCancelled = useCallback((data) => {

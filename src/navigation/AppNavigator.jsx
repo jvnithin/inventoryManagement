@@ -4,13 +4,14 @@ import { useAppContext } from '../context/AppContext';
 
 import SignIn from '../screens/auth/SignIn';
 import SignUp from '../screens/auth/SignUp';
-import DrawerNavigator from './WholesaleDrawerNavigator';
+import WholesalerDrawerNavigator from './WholesaleDrawerNavigator';
 import RetailerDrawerNavigator from './RetailerDrawerNavigator';
 import LoadingScreen from '../screens/Loading';
 import InvitationScreen from '../screens/retailer/InvitationScreen';
 import RetailerList from '../screens/wholeSaler/retailers/RetailerList';
 import RetailerDetails from '../screens/wholeSaler/retailers/RetailerDetails';
-import NotificationScreen from '../screens/NotificationScreen'; // <-- Import your NotificationScreen
+import NotificationScreen from '../screens/NotificationScreen';
+import MyOrdersScreen from '../screens/retailer/MyOrdersScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -34,7 +35,7 @@ const AppNavigator = () => {
           <Stack.Screen name="SignUp" component={SignUp} />
         </>
       ) : user.role === 'wholesaler' ? (
-        <Stack.Screen name="wholesaler" component={DrawerNavigator} />
+        <Stack.Screen name="wholesaler" component={WholesalerDrawerNavigator} />
       ) : (
         <Stack.Screen name="retailer" component={RetailerDrawerNavigator} />
       )}
@@ -44,10 +45,13 @@ const AppNavigator = () => {
       <Stack.Screen
         name="Notifications"
         component={NotificationScreen}
-        options={{ headerShown: false, title: 'Notifications' }} // Show header for notifications
+        options={{ headerShown: false, title: 'Notifications' }}
       />
+     
+
     </Stack.Navigator>
   );
 };
 
 export default AppNavigator;
+
