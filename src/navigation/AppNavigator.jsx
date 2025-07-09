@@ -12,6 +12,7 @@ import RetailerList from '../screens/wholeSaler/retailers/RetailerList';
 import RetailerDetails from '../screens/wholeSaler/retailers/RetailerDetails';
 import NotificationScreen from '../screens/NotificationScreen';
 import MyOrdersScreen from '../screens/retailer/MyOrdersScreen';
+import PaymentPage from '../screens/wholeSaler/PaymentPage';
 
 const Stack = createNativeStackNavigator();
 
@@ -47,6 +48,7 @@ const AppNavigator = () => {
         component={NotificationScreen}
         options={{ headerShown: false, title: 'Notifications' }}
       />
+      <Stack.Screen name="Payment" component={PaymentPage} />
      
 
     </Stack.Navigator>

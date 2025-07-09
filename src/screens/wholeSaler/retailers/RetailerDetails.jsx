@@ -35,11 +35,13 @@ export default function RetailerDetails({ route, navigation }) {
   // --- CENTRAL: Filter orders for this retailer/customer ---
   console.log(orders);
   console.log(retailer.user_id);
+
   const retailerOrders = orders.filter(
     order => String(order.user_id) === String(retailer.user_id),
   );
   console.log(retailerOrders);
   const totalOrders = retailerOrders.length;
+  console.log(totalOrders);
   const totalValue = retailerOrders.reduce(
     (sum, order) =>
       sum +
@@ -181,6 +183,12 @@ export default function RetailerDetails({ route, navigation }) {
                 <Text className={`text-sm ${label}`}>Total Orders</Text>
                 <Text className="text-lg font-bold" style={{ color: accent }}>
                   {totalOrders}
+                </Text>
+              </View>
+              <View>
+                <Text className={`text-sm ${label}`}>Amount Paid</Text>
+                <Text className="text-lg font-bold" style={{ color: accent }}>
+                  {retailer.amount_paid ?? 0}
                 </Text>
               </View>
               <View>

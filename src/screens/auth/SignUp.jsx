@@ -9,6 +9,7 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
@@ -25,8 +26,9 @@ const SignUpScreen = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState(''); // <-- role state
+  const [role, setRole] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -36,6 +38,7 @@ const SignUpScreen = () => {
       Alert.alert('Error', 'Please fill all fields.');
       return;
     }
+    setLoading(true);
     try {
       await axios.post(`${apiUrl}/api/auth/register`, {
         name,
@@ -46,9 +49,11 @@ const SignUpScreen = () => {
       });
       Alert.alert('Success', 'Account created successfully!');
       navigation.navigate('SignIn');
-    } catch (e){
+    } catch (e) {
       Alert.alert('Error', 'Failed to sign up. Please try again.');
-      console.log("signup error",e);
+      console.log("signup error", e);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -211,7 +216,6 @@ const SignUpScreen = () => {
               </Text>
               <View className={`border ${inputBorder} rounded-xl overflow-hidden `}>
                 <Picker
-                
                   selectedValue={role}
                   onValueChange={setRole}
                   style={{
@@ -232,16 +236,20 @@ const SignUpScreen = () => {
             <TouchableOpacity
               className={`w-full h-12 rounded-xl items-center justify-center mb-6 ${
                 allFilled ? btnActive : btnInactive
-              }`}
+              } ${loading ? 'opacity-60' : ''}`}
               onPress={handleSignUp}
-              disabled={!allFilled}
+              disabled={!allFilled || loading}
               activeOpacity={0.8}
             >
-              <Text className={`text-base font-bold px-1 ${
-                allFilled ? btnTextActive : btnTextInactive
-              }`}>
-                Create Account
-              </Text>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text className={`text-base font-bold px-1 ${
+                  allFilled ? btnTextActive : btnTextInactive
+                }`}>
+                  Create Account
+                </Text>
+              )}
             </TouchableOpacity>
 
             {/* Sign In Link */}

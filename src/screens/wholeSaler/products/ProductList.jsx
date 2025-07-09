@@ -438,23 +438,28 @@ export default function MyProductsScreen({ navigation }) {
   };
 
   useEffect(() => {
-    if (user?.subscription_expiry) {
+    console.log(user);
+    if (user?.subscription_expiry ) {
       const expiry = moment(user.subscription_expiry);
       const today = moment();
       const diff = expiry.diff(today, 'days');
 
       // Avoid negative values like -1 or -2
       const daysRemaining = diff >= 0 ? diff : 0;
-
+      console.log('daysRemaining', daysRemaining);
       setRemainingDays(daysRemaining);
       setShowSubscriptionModal(true); // This should trigger once
     }
-  }, [user]);
+    if(user?.subscriptionExpired){
+      setRemainingDays(0);
+      setShowSubscriptionModal(true);
+    }
+  }, []);
   useEffect(() => {
-  if (showSubscriptionModal) {
-    const timer = setTimeout(() => setShowSubscriptionModal(false), 5000);
-    return () => clearTimeout(timer);
-  }
+  // if (showSubscriptionModal) {
+  //   const timer = setTimeout(() => setShowSubscriptionModal(false), 5000);
+  //   return () => clearTimeout(timer);
+  // }
 }, [showSubscriptionModal]);
 
   const renderItem = ({ item }) => (
@@ -564,37 +569,44 @@ export default function MyProductsScreen({ navigation }) {
 
       {/* Subscription Modal */}
       {showSubscriptionModal && (
-        <Modal visible transparent animationType="fade">
-          <View className="flex-1 justify-center items-center bg-black/50 px-6">
-            <View className="bg-white rounded-2xl p-6 w-full max-w-sm items-center">
-              <Text className="text-xl font-bold text-green-700 mb-3 text-center">
-                {remainingDays > 0
-                  ? 'Free Trial Active'
-                  : 'Subscription Expired'}
-              </Text>
-              <Text className="text-base text-gray-700 text-center mb-6">
-                {remainingDays > 0
-                  ? `You have ${remainingDays} day(s) left in your trial.`
-                  : 'Your trial has expired. Please subscribe.'}
-              </Text>
-              <TouchableOpacity
-                className="bg-green-600 px-6 py-2 rounded-full"
-                onPress={() => {
-                  setShowSubscriptionModal(false); // Close the modal
-                  Alert.alert(
-                    'Subscription',
-                    'Navigate to subscription screen',
-                  );
-                }}
-              >
-                <Text className="text-white font-semibold text-base">
-                  Upgrade Now
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-      )}
+  <Modal visible transparent animationType="fade">
+    <View className="flex-1 justify-center items-center bg-black/50 px-6">
+      <View className="bg-white rounded-2xl p-6 w-full max-w-sm items-center">
+        <Text className="text-xl font-bold text-green-700 mb-3 text-center">
+          {remainingDays > 0
+            ? 'Subscription Active'
+            : 'Subscription Expired'}
+        </Text>
+        <Text className="text-base text-gray-700 text-center mb-6">
+          {remainingDays > 0
+            ? `You have ${remainingDays} day(s) left in your subscription.`
+            : 'Your trial has expired. Please subscribe.'}
+        </Text>
+        {/* Show close button only if the trial is still active */}
+        {remainingDays > 0 && (
+          <TouchableOpacity
+            className="absolute top-4 right-4 p-2"
+            onPress={() => setShowSubscriptionModal(false)}
+          >
+            <Text className="text-gray-500 text-lg font-bold">×</Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity
+          className="bg-green-600 px-6 py-2 rounded-full"
+          onPress={() => {
+            setShowSubscriptionModal(false);
+            navigation.navigate("Payment");
+          }}
+        >
+          <Text className="text-white font-semibold text-base">
+            Upgrade Now
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+)}
+
     </View>
   );
 }

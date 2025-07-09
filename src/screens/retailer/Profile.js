@@ -17,12 +17,13 @@ import Geolocation from '@react-native-community/geolocation';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'nativewind';
+import { useNavigation } from '@react-navigation/native';
 
 export default function Profile() {
   const { user, handleLogout, apiUrl, setUser } = useAppContext();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-
+  const navigation = useNavigation();
   const [modalVisible, setModalVisible] = useState(false);
   const [street, setStreet] = useState('');
   const [city, setCity] = useState('');
@@ -31,7 +32,10 @@ export default function Profile() {
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
   const [fetchingLocation, setFetchingLocation] = useState(false);
-
+  const logout = ()=>{
+    handleLogout();
+    // navigation.navigate("SignIn");
+  }
   const handleChangeAddress = () => {
     const addr = user.address || {};
     setStreet(addr.street || '');
@@ -135,7 +139,7 @@ export default function Profile() {
       )}
       <TouchableOpacity
         className="bg-red-600 rounded-md py-3 mb-4"
-        onPress={handleLogout}
+        onPress={logout}
       >
         <Text className="text-center text-white font-semibold">Logout</Text>
       </TouchableOpacity>

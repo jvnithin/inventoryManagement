@@ -88,7 +88,7 @@ export default function RetailerList({ navigation }) {
             text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}
           `}
         >
-          Total Orders: ₹{item.totalValue ?? 0}
+          Total Orders: {item.total_orders ?? 0}
         </Text>
         <Text
           className={`
@@ -102,7 +102,7 @@ export default function RetailerList({ navigation }) {
             text-sm ${isDark ? 'text-green-200' : 'text-green-700'}
           `}
         >
-          Paid: ₹{item.totalPaid ?? 0}
+          Paid: ₹{item.amount_paid ?? 0}
         </Text>
       </View>
       <Icon name="chevron-forward-outline" size={24} color="#065F46" />

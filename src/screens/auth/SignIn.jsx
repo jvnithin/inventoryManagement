@@ -8,6 +8,7 @@ import {
   Platform,
   ScrollView,
   SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
@@ -21,17 +22,24 @@ const SignInScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { apiUrl, setUser } = useAppContext();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
   const handleSignIn = async () => {
+    setLoading(true);
     try {
       const res = await axios.post(`${apiUrl}/api/auth/login`, { email, password });
       setUser(res.data.user);
       await AsyncStorage.setItem('token', res.data.token);
+      // Optionally navigate to main screen here
+      // navigation.navigate('Home');
     } catch (e) {
       console.log(e);
+      // Optionally show error to user
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -120,11 +128,16 @@ const SignInScreen = () => {
 
               {/* Sign In */}
               <TouchableOpacity
-                className={`w-full h-14 rounded-xl items-center justify-center mt-6 ${btnBg} shadow-lg`}
+                className={`w-full h-14 rounded-xl items-center justify-center mt-6 ${btnBg} shadow-lg ${loading ? 'opacity-60' : ''}`}
                 onPress={handleSignIn}
                 activeOpacity={0.8}
+                disabled={loading}
               >
-                <Text className="text-white text-base font-semibold">Sign In</Text>
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text className="text-white text-base font-semibold">Sign In</Text>
+                )}
               </TouchableOpacity>
 
               {/* Divider */}

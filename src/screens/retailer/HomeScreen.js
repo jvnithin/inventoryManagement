@@ -1,5 +1,3 @@
-// HomeScreen.jsx
-
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -8,8 +6,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Alert,
-  Share,
+  Modal,
+  TextInput,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
@@ -19,7 +17,7 @@ import { useColorScheme } from 'nativewind';
 import { emit } from '../../services/socketService';
 
 export default function HomeScreen({ navigation }) {
-  const {user}=useAppContext();
+  const { user } = useAppContext();
   const [wholesalers, setWholesalers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -28,9 +26,11 @@ export default function HomeScreen({ navigation }) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const fetchWholesalers = async () => {
-    // emit("retailer-login",{id:user.retailer_id});
+  // Modal state
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteCode, setInviteCode] = useState('');
 
+  const fetchWholesalers = async () => {
     setError(null);
     try {
       const token = await AsyncStorage.getItem('token');
@@ -48,7 +48,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   useEffect(() => {
-    emit("retailer-connect",{id:user.userId});
+    emit("retailer-connect", { id: user.userId });
     setLoading(true);
     fetchWholesalers();
   }, []);
@@ -59,7 +59,6 @@ export default function HomeScreen({ navigation }) {
   }, []);
 
   const handleWholesalerPress = wholesaler => {
-    // console.log("Home : ",wholesaler)
     navigation.navigate('WholeSalerProducts', { wholesaler });
   };
 
@@ -107,6 +106,74 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: 16 }}>
+      {/* Invite Code Modal */}
+      <Modal
+        visible={showInviteModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowInviteModal(false)}
+      >
+        <View style={{
+          flex: 1,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <View style={{
+            backgroundColor: colors.background,
+            padding: 24,
+            borderRadius: 12,
+            width: '80%',
+            alignItems: 'center'
+          }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.textPrimary, marginBottom: 16 }}>
+              Enter Invite Code
+            </Text>
+            <TextInput
+              value={inviteCode}
+              onChangeText={setInviteCode}
+              placeholder="Invite Code"
+              placeholderTextColor={colors.textSecondary}
+              style={{
+                borderWidth: 1,
+                borderColor: colors.muted,
+                borderRadius: 8,
+                padding: 10,
+                width: '100%',
+                marginBottom: 20,
+                color: colors.textPrimary
+              }}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              onPress={() => {
+                setShowInviteModal(false);
+                const code = inviteCode.trim();
+                setInviteCode('');
+                if (code) {
+                  navigation.navigate('Invite', { inviteCode: code });
+                  // Or: navigation.navigate(`invite/${code}`);
+                }
+              }}
+              style={{
+                backgroundColor: colors.inviteButton,
+                paddingVertical: 12,
+                paddingHorizontal: 32,
+                borderRadius: 8,
+                marginBottom: 10,
+                opacity: inviteCode.trim() ? 1 : 0.5,
+              }}
+              disabled={!inviteCode.trim()}
+            >
+              <Text style={{ color: '#fff', fontWeight: '600' }}>Submit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowInviteModal(false)}>
+              <Text style={{ color: colors.error, marginTop: 8 }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.textPrimary, marginBottom: 16 }}>
         Wholesalers who invited you
       </Text>
@@ -156,12 +223,8 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         )}
       />
-      {/* <TouchableOpacity
-        onPress={() => {
-          const inviteCode = user?.group_code || 'YOUR_GROUP_CODE';
-          const link = `inventorymanagement://invite/${inviteCode}`;
-          Share.share({ message: `Join my network! Tap: ${link}`, url: link });
-        }}
+      <TouchableOpacity
+        onPress={() => setShowInviteModal(true)}
         activeOpacity={0.85}
         style={{
           position: 'absolute',
@@ -180,8 +243,8 @@ export default function HomeScreen({ navigation }) {
         }}
       >
         <Icon name="add" size={24} color="#fff" />
-        <Text style={{ color: '#fff', marginLeft: 8, fontWeight: '600' }}>Invite</Text>
-      </TouchableOpacity> */}
+        <Text style={{ color: '#fff', marginLeft: 8, fontWeight: '600' }}>Join</Text>
+      </TouchableOpacity>
     </View>
   );
 }
