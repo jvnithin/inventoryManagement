@@ -1,5 +1,3 @@
-// src/screens/Transactions.jsx
-
 import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
@@ -13,22 +11,20 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useColorScheme } from 'nativewind';
-
-const dummyTransactions = [
-  { id: 1, retailerName: 'wholesaler A', date: '2025-06-16', amount: 5000.0, type: 'Credit', status: 'Completed' },
-  { id: 2, retailerName: 'wholesaler B', date: '2025-06-18', amount: 1500.0, type: 'Debit', status: 'Pending' },
-  { id: 3, retailerName: 'wholesaler C', date: '2025-06-19', amount: 100.0, type: 'Credit', status: 'Completed' },
-  { id: 4, retailerName: 'wholesaler D', date: '2025-06-21', amount: 850.0, type: 'Debit', status: 'Failed' },
-];
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { useAppContext } from '../../context/AppContext';
 
 const formatCurrency = amt => `₹${amt.toFixed(2)}`;
 const formatDate = d =>
   new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
 export default function Transactions() {
+  const { apiUrl } = useAppContext();
   const [transactions, setTransactions] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,45 +33,80 @@ export default function Transactions() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  useEffect(() => loadData(), []);
+  // Fetch & transform API data
+  const fetchTransactions = async () => {
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await axios.get(
+        `${apiUrl}/api/retailer/get-transactions`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // Transform API data to UI-friendly structure
+      const transformed = (response.data || []).map(tx => {
+        // Prefer wholesaler_id if present, else user_id
+        let partyLabel = tx.wholesaler_id
+          ? `Wholesaler ${tx.wholesaler_id}`
+          : `User ${tx.user_id}`;
+        // Capitalize status
+        let statusLabel = tx.status
+          ? tx.status.charAt(0).toUpperCase() + tx.status.slice(1)
+          : '';
+        // Type: Credit if amount > 0, Debit if amount < 0
+        let type = 'debit'
+        return {
+          id: tx.payment_id,
+          partyLabel,
+          date: tx.created_at,
+          amount: Math.abs(tx.amount),
+          status: statusLabel,
+          type,
+        };
+      });
+      setTransactions(transformed);
+    } catch (e) {
+      console.error(e);
+      Alert.alert("Error", "Failed to fetch transactions.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  // Filter on search
   useEffect(() => {
     const filteredData = transactions.filter(tx =>
-      tx.retailerName.toLowerCase().includes(search.toLowerCase())
+      tx.partyLabel.toLowerCase().includes(search.toLowerCase())
     );
     setFiltered(filteredData);
   }, [search, transactions]);
 
-  function loadData() {
-    setLoading(true);
-    setTimeout(() => {
-      setTransactions(dummyTransactions);
-      setLoading(false);
-    }, 800);
-  }
-
-  function onRefresh() {
+  // Pull-to-refresh
+  const onRefresh = () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setTransactions(dummyTransactions);
-      setRefreshing(false);
-    }, 800);
-  }
+    fetchTransactions();
+  };
 
+  // Summary
   const summary = {
     total: transactions.reduce((sum, t) => sum + t.amount, 0),
     credit: transactions.filter(t => t.type === 'Credit').reduce((s, t) => s + t.amount, 0),
     debit: transactions.filter(t => t.type === 'Debit').reduce((s, t) => s + t.amount, 0),
   };
 
+  // Colors
   const bg = isDark ? 'bg-gray-900' : 'bg-gray-50';
   const cardBg = isDark ? 'bg-gray-800' : 'bg-white';
   const textPrimary = isDark ? 'text-gray-100' : 'text-gray-800';
   const textSecondary = isDark ? 'text-gray-400' : 'text-gray-600';
   const accentGreen = '#10B981';
   const accentRed = '#EF4444';
-  const accentYellow = '#D97706';
-  const iconColor = isDark ? '#A3E635' : '#065F46';
 
+  // Render each transaction
   const renderItem = ({ item }) => (
     <TouchableOpacity
       activeOpacity={0.8}
@@ -86,7 +117,7 @@ export default function Transactions() {
       onPress={() => {}}
     >
       <View className="flex-1 pr-4">
-        <Text className={`text-lg font-semibold ${textPrimary}`}>{item.retailerName}</Text>
+        <Text className={`text-lg font-semibold ${textPrimary}`}>{item.partyLabel}</Text>
         <Text className={`text-sm mt-1 ${textSecondary}`}>
           Date: {formatDate(item.date)}
         </Text>
@@ -107,14 +138,14 @@ export default function Transactions() {
       </View>
       <Text
         className={`text-sm font-medium px-1 ${
-          item.status === 'Completed'
+          item.status === 'Successful'
             ? 'text-green-700'
             : item.status === 'Pending'
             ? 'text-yellow-600'
             : 'text-red-600'
         }`}
       >
-        {item.status} 
+        {item.status}
       </Text>
     </TouchableOpacity>
   );
@@ -136,18 +167,12 @@ export default function Transactions() {
       >
         {/* Header & Search */}
         <View className={`${cardBg} border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-          {/* <View className="flex-row justify-between items-center px-4 py-3">
-            <Text className={`text-2xl font-bold ${textPrimary}`}>Transactions</Text>
-            <TouchableOpacity className="p-2 rounded-full" style={{ backgroundColor: '#10B98120' }}>
-              <Icon name="filter-outline" size={20} color={accentGreen} />
-            </TouchableOpacity>
-          </View> */}
           <View className="mx-4 mb-3">
             <View className={`flex-row items-center rounded-full px-4 py-2 border mt-2 shadow-sm ${cardBg}`}>
               <Icon name="search-outline" size={20} color="#9CA3AF" />
               <TextInput
                 className={`ml-3 flex-1 ${textPrimary}`}
-                placeholder="Search by wholesaler"
+                placeholder="Search by wholesaler or user"
                 placeholderTextColor="#9CA3AF"
                 value={search}
                 onChangeText={setSearch}
@@ -173,7 +198,7 @@ export default function Transactions() {
                 ₹{summary.total.toFixed(2)}
               </Text>
             </View>
-            <View className="px-5 py-4 mr-3 rounded-2xl shadow-lg" style={{ backgroundColor: '#10B98120' }}>
+            {/* <View className="px-5 py-4 mr-3 rounded-2xl shadow-lg" style={{ backgroundColor: '#10B98120' }}>
               <Text className="text-green-800 text-sm">Credits</Text>
               <Text className="text-green-900 text-2xl font-bold mt-1">
                 ₹{summary.credit.toFixed(2)}
@@ -184,14 +209,14 @@ export default function Transactions() {
               <Text className="text-red-900 text-2xl font-bold mt-1">
                 ₹{summary.debit.toFixed(2)}
               </Text>
-            </View>
+            </View> */}
           </ScrollView>
         </View>
 
         {/* Transactions List */}
         <FlatList
           data={filtered}
-          keyExtractor={item => item.id.toString()}
+          keyExtractor={item => item.id?.toString()}
           renderItem={renderItem}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentGreen} colors={[accentGreen]} />
