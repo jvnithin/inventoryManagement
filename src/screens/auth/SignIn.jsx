@@ -31,7 +31,7 @@ const SignInScreen = () => {
       setUser(res.data.user);
       await AsyncStorage.setItem('token', res.data.token);
     } catch (e) {
-      console.error(e);
+      console.log(e);
     }
   };
 
@@ -65,7 +65,7 @@ const SignInScreen = () => {
               </View>
             </View>
 
-            <Text className={`text-3xl font-bold mb-2 ${textPrimary}`}>Welcome Back</Text>
+            <Text className={`text-3xl font-bold mb-2 px-1 ${textPrimary}`}>Welcome Back</Text>
             <Text className={`text-center text-base mb-8 ${textSecondary}`}>
               Sign in to your account to continue
             </Text>

@@ -46,8 +46,9 @@ const SignUpScreen = () => {
       });
       Alert.alert('Success', 'Account created successfully!');
       navigation.navigate('SignIn');
-    } catch {
+    } catch (e){
       Alert.alert('Error', 'Failed to sign up. Please try again.');
+      console.log("signup error",e);
     }
   };
 
@@ -86,10 +87,10 @@ const SignUpScreen = () => {
                   <Text className="text-background-light text-lg font-bold">+</Text>
                 </View>
               </View>
-              <Text className={`text-3xl font-bold mb-2 ${headerAccent}`}>
+              <Text className={`text-3xl font-bold mb-2 px-1 ${headerAccent}`}>
                 Create Account
               </Text>
-              <Text className={`${textSecondary} text-center text-base`}>
+              <Text className={`${textSecondary} text-center text-base px-1`}>
                 Join us today and get started
               </Text>
             </View>
@@ -208,14 +209,15 @@ const SignUpScreen = () => {
               <Text className={`text-muted text-sm font-medium mb-1`}>
                 Role
               </Text>
-              <View className={`border ${inputBorder} rounded-xl overflow-hidden`}>
+              <View className={`border ${inputBorder} rounded-xl overflow-hidden `}>
                 <Picker
+                
                   selectedValue={role}
                   onValueChange={setRole}
                   style={{
                     color: isDark ? '#fff' : '#111827',
                     backgroundColor: isDark ? '#1F2937' : '#fff',
-                    height: 48,
+                    height: 60,
                   }}
                   dropdownIconColor={isDark ? '#fff' : '#111827'}
                 >
@@ -235,7 +237,7 @@ const SignUpScreen = () => {
               disabled={!allFilled}
               activeOpacity={0.8}
             >
-              <Text className={`text-base font-bold  ${
+              <Text className={`text-base font-bold px-1 ${
                 allFilled ? btnTextActive : btnTextInactive
               }`}>
                 Create Account
@@ -243,7 +245,7 @@ const SignUpScreen = () => {
             </TouchableOpacity>
 
             {/* Sign In Link */}
-            <View className="flex-row justify-center items-center">
+            <View className="flex-row justify-center items-center px-1">
               <Text className="text-muted text-base">
                 Already have an account?
               </Text>

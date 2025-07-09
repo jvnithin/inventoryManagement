@@ -6,8 +6,8 @@ import { on, off, getSocket, emit } from '../services/socketService';
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  // const apiUrl = 'http://192.168.1.44:8000';
-  const apiUrl = 'https://backendinventory-4lnp.onrender.com';
+  const apiUrl = 'http://192.168.1.22:8000';
+  // const apiUrl = 'https://backendinventory-4lnp.onrender.com';
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
