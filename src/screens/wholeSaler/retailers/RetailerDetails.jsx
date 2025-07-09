@@ -8,11 +8,14 @@ import {
   Image,
   Alert,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useAppContext } from '../../../context/AppContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from 'nativewind';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 const fallbackImage =
   'https://ui-avatars.com/api/?background=16A34A&color=fff&name=R';
@@ -22,7 +25,7 @@ export default function RetailerDetails({ route, navigation }) {
   const { orders, fetchOrders, apiUrl } = useAppContext();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-
+  const [loading, setLoading] = useState(false);
   // Form state
   const [name, setName] = useState(retailer.name);
   const [contact, setContact] = useState(retailer.phone);
@@ -31,6 +34,11 @@ export default function RetailerDetails({ route, navigation }) {
   const [stateField, setStateField] = useState(retailer.address?.state || '');
   const [zip, setZip] = useState(retailer.address?.zip || '');
   const [photo, setPhoto] = useState(retailer.photo);
+
+  // Edit mode and dropdown state
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [showNewBillDropdown, setShowNewBillDropdown] = useState(false);
+  const [billAmount, setBillAmount] = useState('');
 
   // --- CENTRAL: Filter orders for this retailer/customer ---
   console.log(orders);
@@ -61,10 +69,55 @@ export default function RetailerDetails({ route, navigation }) {
         { headers: { Authorization: `Bearer ${token}` } },
       );
       Alert.alert('Success', 'Retailer updated successfully!');
-      navigation.goBack();
-    } catch {
+      setIsEditMode(false);
+    } catch (e) {
       Alert.alert('Error', 'Failed to update retailer!');
+      console.log('updating details of retailer in wholesaler', e);
     }
+  };
+
+  const handleNewBillSubmit = async () => {
+    if (!billAmount || parseFloat(billAmount) <= 0) {
+      Alert.alert('Error', 'Please enter a valid amount');
+      console.log('no bill amount');
+      return;
+    }
+
+    try {
+      // TODO: Send to backend
+      console.log('New bill amount:', billAmount);
+      const response = await axios.post(
+        `${apiUrl}/api/wholesaler/add-payment`,
+        { retailerId: retailer.user_id, amount: parseFloat(billAmount) },
+        {
+          headers: {
+            Authorization: `Bearer ${await AsyncStorage.getItem('token')}`,
+          },
+        },
+      );
+      console.log('new bill response', response.data);
+      Alert.alert('Success', 'Bill amount recorded successfully!');
+      setBillAmount('');
+      setShowNewBillDropdown(false);
+
+      // Refresh orders or update UI as needed
+      fetchOrders();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to record bill amount');
+      console.log('new bill error', error);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    // Reset form to original values
+    setName(retailer.name);
+    setContact(retailer.phone);
+    setStreet(retailer.address?.street || '');
+    setCity(retailer.address?.city || '');
+    setStateField(retailer.address?.state || '');
+    setZip(retailer.address?.zip || '');
+    setPhoto(retailer.photo);
+    setIsEditMode(false);
   };
 
   useEffect(() => {
@@ -113,20 +166,22 @@ export default function RetailerDetails({ route, navigation }) {
           </Text>
         </View>
 
-        <ScrollView className="px-4 py-4 ">
+        <ScrollView className="px-4 py-4">
           {/* Profile */}
-          <View className="flex-row items-center mb-6">
+          <View className="flex-col items-center mb-6">
             <Image
               source={{ uri: photo || fallbackImage }}
               className="w-20 h-20 rounded-full mr-4 border-2 border-green-200 bg-green-50"
               onError={() => setPhoto(fallbackImage)}
             />
-            <TouchableOpacity
-              onPress={() => console.log('Change Photo')}
-              className="px-4 py-2 bg-green-100 rounded-full"
-            >
-              <Text className="text-green-800 font-medium">Change Photo </Text>
-            </TouchableOpacity>
+            {isEditMode && (
+              <TouchableOpacity
+                onPress={() => console.log('Change Photo')}
+                className="px-4 py-2 bg-green-100 rounded-full mt-3"
+              >
+                <Text className="text-green-800 font-medium">Change Photo</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Form Card */}
@@ -135,7 +190,10 @@ export default function RetailerDetails({ route, navigation }) {
             <TextInput
               value={name}
               onChangeText={setName}
-              className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-3 ${text}`}
+              editable={isEditMode}
+              className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-3 ${text} ${
+                !isEditMode ? 'opacity-60' : ''
+              }`}
             />
 
             <Text className={`text-sm ${label} mb-1`}>Contact Number</Text>
@@ -143,7 +201,10 @@ export default function RetailerDetails({ route, navigation }) {
               value={contact}
               onChangeText={setContact}
               keyboardType="phone-pad"
-              className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-3 ${text}`}
+              editable={isEditMode}
+              className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-3 ${text} ${
+                !isEditMode ? 'opacity-60' : ''
+              }`}
             />
 
             <Text className={`text-sm ${label} mb-2`}>Address</Text>
@@ -151,21 +212,30 @@ export default function RetailerDetails({ route, navigation }) {
               placeholder="Street"
               value={street}
               onChangeText={setStreet}
-              className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-2 ${text}`}
+              editable={isEditMode}
+              className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-2 ${text} ${
+                !isEditMode ? 'opacity-60' : ''
+              }`}
               placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
             />
             <TextInput
               placeholder="City"
               value={city}
               onChangeText={setCity}
-              className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-2 ${text}`}
+              editable={isEditMode}
+              className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-2 ${text} ${
+                !isEditMode ? 'opacity-60' : ''
+              }`}
               placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
             />
             <TextInput
               placeholder="State"
               value={stateField}
               onChangeText={setStateField}
-              className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-2 ${text}`}
+              editable={isEditMode}
+              className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-2 ${text} ${
+                !isEditMode ? 'opacity-60' : ''
+              }`}
               placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
             />
             <TextInput
@@ -173,7 +243,10 @@ export default function RetailerDetails({ route, navigation }) {
               value={zip}
               onChangeText={setZip}
               keyboardType="number-pad"
-              className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-4 ${text}`}
+              editable={isEditMode}
+              className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-4 ${text} ${
+                !isEditMode ? 'opacity-60' : ''
+              }`}
               placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
             />
 
@@ -199,14 +272,106 @@ export default function RetailerDetails({ route, navigation }) {
               </View>
             </View>
           </View>
-          <TouchableOpacity
-            onPress={handleSaveRetailer}
-            className=" mb-8 bg-green-700 rounded-lg py-3 shadow-lg"
-          >
-            <Text className="text-center text-white font-semibold text-base">
-              Save Changes
-            </Text>
-          </TouchableOpacity>
+
+          {/* Action Buttons */}
+          <View className="flex-row gap-3 mb-6">
+            {!isEditMode ? (
+              <>
+                <TouchableOpacity
+                  onPress={() => setIsEditMode(true)}
+                  className="flex-1 bg-green-700 rounded-lg py-3 shadow-lg"
+                >
+                  <Text className="text-center text-white font-semibold text-base">
+                    Update Details
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setShowNewBillDropdown(!showNewBillDropdown)}
+                  className="flex-1 bg-blue-600 rounded-lg py-3 shadow-lg"
+                >
+                  <Text className="text-center text-white font-semibold text-base">
+                    New Bill
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <TouchableOpacity
+                  onPress={handleSaveRetailer}
+                  className="flex-1 bg-green-700 rounded-lg py-3 shadow-lg"
+                >
+                  <Text className="text-center text-white font-semibold text-base">
+                    Save Changes
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleCancelEdit}
+                  className="flex-1 bg-gray-500 rounded-lg py-3 shadow-lg"
+                >
+                  <Text className="text-center text-white font-semibold text-base">
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+
+          {/* New Bill Dropdown */}
+          {showNewBillDropdown && (
+            <View
+              className={`${cardBg} rounded-xl p-4 mb-6 shadow-md border-2 border-blue-200`}
+            >
+              <View className="flex-row items-center mb-3">
+                <Icon name="receipt" size={20} color="#2563EB" />
+                <Text className="ml-2 text-lg font-bold text-blue-600">
+                  New Bill
+                </Text>
+              </View>
+
+              <Text className={`text-sm ${label} mb-2`}>Enter Amount</Text>
+              <TextInput
+                placeholder="0.00"
+                value={billAmount}
+                onChangeText={setBillAmount}
+                keyboardType="numeric"
+                className={`border ${inputBorder} ${inputBg} rounded-lg px-3 py-2 mb-4 ${text}`}
+                placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
+              />
+
+              <View className="flex-row gap-3">
+                <TouchableOpacity
+                  onPress={handleNewBillSubmit}
+                  className={`flex-1 ${
+                    loading ? 'bg-blue-400' : 'bg-blue-600'
+                  } rounded-lg py-2 shadow-lg`}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text className="text-center text-white font-semibold">
+                      Submit
+                    </Text>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    if (!loading) {
+                      setBillAmount('');
+                      setShowNewBillDropdown(false);
+                    }
+                  }}
+                  className="flex-1 bg-gray-500 rounded-lg py-2 shadow-lg"
+                  disabled={loading}
+                >
+                  <Text className="text-center text-white font-semibold">
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
           {/* Orders List */}
           <Text className="text-lg font-bold mb-3" style={{ color: accent }}>
@@ -217,46 +382,45 @@ export default function RetailerDetails({ route, navigation }) {
               No orders for this retailer.
             </Text>
           )}
-          <View className='pb-5'>
-
-          {retailerOrders
-            .filter(order => order.status === 'delivered') // only delivered orders
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) // most recent first
-            .slice(0, 5) // take only the top 5
-            .map(order => (
-              <View
-                key={order.order_id}
-                className={`${cardBg} rounded-lg p-4 mb-3 border ${
-                  isDark ? 'border-gray-700' : 'border-gray-200'
-                }`}
-              >
-                <Text className="font-semibold mb-1" style={{ color: accent }}>
-                  {order.created_at
-                    ? new Date(order.created_at).toLocaleDateString()
-                    : ''}
-                </Text>
-                <Text className={`text-sm ${label} mb-1`}>
-                  Items:{' '}
-                  <Text className={`font-medium ${text}`}>
-                    {order.order_items?.name || ''} x{' '}
-                    {order.order_items?.quantity || ''}
+          <View className="pb-5">
+            {retailerOrders
+              .filter(order => order.status === 'delivered') // only delivered orders
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) // most recent first
+              .slice(0, 5) // take only the top 5
+              .map(order => (
+                <View
+                  key={order.order_id}
+                  className={`${cardBg} rounded-lg p-4 mb-3 border ${
+                    isDark ? 'border-gray-700' : 'border-gray-200'
+                  }`}
+                >
+                  <Text
+                    className="font-semibold mb-1"
+                    style={{ color: accent }}
+                  >
+                    {order.created_at
+                      ? new Date(order.created_at).toLocaleDateString()
+                      : ''}
                   </Text>
-                </Text>
-                <View className="flex-row items-center">
-                  <Icon name="pricetag" size={16} color={accent} />
-                  <Text className="ml-1 font-bold" style={{ color: accent }}>
-                    ₹
-                    {order.order_items
-                      ? order.order_items.price * order.order_items.quantity
-                      : 0}
+                  <Text className={`text-sm ${label} mb-1`}>
+                    Items:{' '}
+                    <Text className={`font-medium ${text}`}>
+                      {order.order_items?.name || ''} x{' '}
+                      {order.order_items?.quantity || ''}
+                    </Text>
                   </Text>
+                  <View className="flex-row items-center">
+                    <Icon name="pricetag" size={16} color={accent} />
+                    <Text className="ml-1 font-bold" style={{ color: accent }}>
+                      ₹
+                      {order.order_items
+                        ? order.order_items.price * order.order_items.quantity
+                        : 0}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            ))}
+              ))}
           </View>
-
-          {/* Save Button */}
-          
         </ScrollView>
       </SafeAreaView>
     </View>
