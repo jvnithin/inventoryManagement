@@ -22,10 +22,13 @@ const fallbackImage =
 
 export default function RetailerDetails({ route, navigation }) {
   const { retailer } = route.params;
-  const { orders, fetchOrders, apiUrl } = useAppContext();
+  const [amountPaid,setAmountPaid]=useState(retailer.amount_paid);
+  const { orders, fetchOrders, apiUrl,setRetailers,retailers,user } = useAppContext();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const [loading, setLoading] = useState(false);
+  const [billSubmitLoading,setBillSubmitLoading]=useState(false);
+  const [updateProfileLoading, setUpdateProfileLoading] = useState(false);
   // Form state
   const [name, setName] = useState(retailer.name);
   const [contact, setContact] = useState(retailer.phone);
@@ -60,6 +63,7 @@ export default function RetailerDetails({ route, navigation }) {
   );
 
   const handleSaveRetailer = async () => {
+    setUpdateProfileLoading(true);
     try {
       const token = await AsyncStorage.getItem('token');
       const address = { street, city, state: stateField, zip };
@@ -74,6 +78,9 @@ export default function RetailerDetails({ route, navigation }) {
       Alert.alert('Error', 'Failed to update retailer!');
       console.log('updating details of retailer in wholesaler', e);
     }
+    finally{
+      setUpdateProfileLoading(false);
+    }
   };
 
   const handleNewBillSubmit = async () => {
@@ -83,18 +90,36 @@ export default function RetailerDetails({ route, navigation }) {
       return;
     }
 
+    setBillSubmitLoading(true);
     try {
       // TODO: Send to backend
       console.log('New bill amount:', billAmount);
       const response = await axios.post(
         `${apiUrl}/api/wholesaler/add-payment`,
-        { retailerId: retailer.user_id, amount: parseFloat(billAmount) },
+        { retailerId: retailer.user_id, amount: parseFloat(billAmount),wholesaler_id:String(user.userId) },
         {
           headers: {
             Authorization: `Bearer ${await AsyncStorage.getItem('token')}`,
           },
         },
       );
+      if(response.status === 200){
+        // console.log("Updating retailers...");
+        // console.log("Retailers",retailers);
+        const updateRetailers = retailers.map((ret) => {
+          if (String(ret.user_id) === String(retailer.user_id)) {
+            return {
+              ...ret,
+              amount_paid: ret.amount_paid + parseFloat(billAmount),
+            };
+          }
+          return ret;
+        })
+        // console.log("Updated retailers",updateRetailers);
+        setAmountPaid(amountPaid + parseFloat(billAmount));
+        setRetailers(updateRetailers);
+      }
+      
       console.log('new bill response', response.data);
       Alert.alert('Success', 'Bill amount recorded successfully!');
       setBillAmount('');
@@ -105,6 +130,9 @@ export default function RetailerDetails({ route, navigation }) {
     } catch (error) {
       Alert.alert('Error', 'Failed to record bill amount');
       console.log('new bill error', error);
+    }
+    finally{
+      setBillSubmitLoading(false);
     }
   };
 
@@ -261,7 +289,7 @@ export default function RetailerDetails({ route, navigation }) {
               <View>
                 <Text className={`text-sm ${label}`}>Amount Paid</Text>
                 <Text className="text-lg font-bold" style={{ color: accent }}>
-                  {retailer.amount_paid ?? 0}
+                  {amountPaid ?? 0}
                 </Text>
               </View>
               <View>
@@ -281,6 +309,7 @@ export default function RetailerDetails({ route, navigation }) {
                   onPress={() => setIsEditMode(true)}
                   className="flex-1 bg-green-700 rounded-lg py-3 shadow-lg"
                 >
+                  
                   <Text className="text-center text-white font-semibold text-base">
                     Update Details
                   </Text>
@@ -299,10 +328,18 @@ export default function RetailerDetails({ route, navigation }) {
                 <TouchableOpacity
                   onPress={handleSaveRetailer}
                   className="flex-1 bg-green-700 rounded-lg py-3 shadow-lg"
+                  disabled={updateProfileLoading}
                 >
-                  <Text className="text-center text-white font-semibold text-base">
+                  {
+                    updateProfileLoading ? (
+                      <ActivityIndicator size="small" color="white" />
+                      
+                    ):
+                    <Text className="text-center text-white font-semibold text-base">
                     Save Changes
                   </Text>
+                  }
+                  
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleCancelEdit}
@@ -344,9 +381,9 @@ export default function RetailerDetails({ route, navigation }) {
                   className={`flex-1 ${
                     loading ? 'bg-blue-400' : 'bg-blue-600'
                   } rounded-lg py-2 shadow-lg`}
-                  disabled={loading}
+                  disabled={billSubmitLoading}
                 >
-                  {loading ? (
+                  {billSubmitLoading ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
                     <Text className="text-center text-white font-semibold">

@@ -7,10 +7,10 @@ import { useAppContext } from '../../context/AppContext';
 import { useNavigation } from '@react-navigation/native';
 
 const PaymentPage = () => {
-  const { colorScheme,setUser } = useColorScheme();
+  const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const navigation = useNavigation();
-  const {apiUrl} = useAppContext();
+  const {apiUrl,user,setUser} = useAppContext();
   const colors = {
     background: isDark ? '#1F2937' : '#FFFFFF',
     textPrimary: isDark ? '#F9FAFB' : '#065F46',
