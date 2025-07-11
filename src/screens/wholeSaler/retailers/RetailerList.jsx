@@ -19,13 +19,13 @@ const fallbackImage =
 
 export default function RetailerList({ navigation }) {
   const { user, retailers, fetchRetailers } = useAppContext();
+  
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
-
   // Invite handler using Share API
   const handleInviteRetailer = async () => {
     try {
@@ -50,6 +50,8 @@ export default function RetailerList({ navigation }) {
   }, [fetchRetailers]);
 
   useEffect(() => {
+  // if(user.subscriptionExpired) navigation.navigate('ProductList', { subscriptionExpired: true });
+
     loadRetailers();
   }, [loadRetailers]);
 

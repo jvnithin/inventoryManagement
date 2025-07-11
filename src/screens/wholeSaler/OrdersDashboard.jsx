@@ -11,14 +11,16 @@ import axios from 'axios';
 
 const Tab = createMaterialTopTabNavigator();
 
-export default function OrdersDashboard() {
-  const { apiUrl, orders, setOrders, fetchOrders } = useAppContext();
+export default function OrdersDashboard(navigation) {
+  const { apiUrl, orders, setOrders, fetchOrders,user } = useAppContext();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const [loading, setLoading] = useState(true);
 
   // Use fetchOrders from context
   useEffect(() => {
+  // if(user.subscriptionExpired) navigation.navigate('ProductList', { subscriptionExpired: true });
+
     const load = async () => {
       setLoading(true);
       await fetchOrders();

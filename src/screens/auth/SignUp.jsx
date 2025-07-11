@@ -33,29 +33,51 @@ const SignUpScreen = () => {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const handleSignUp = async () => {
-    if (!name || !email || !phone || !password || !role) {
-      Alert.alert('Error', 'Please fill all fields.');
-      return;
-    }
-    setLoading(true);
-    try {
-      await axios.post(`${apiUrl}/api/auth/register`, {
-        name,
-        email,
-        phone,
-        password,
-        role,
-      });
-      Alert.alert('Success', 'Account created successfully!');
-      navigation.navigate('SignIn');
-    } catch (e) {
-      Alert.alert('Error', 'Failed to sign up. Please try again.');
-      console.log("signup error", e);
-    } finally {
-      setLoading(false);
-    }
-  };
+ const handleSignUp = async () => {
+  if (!name || !email || !phone || !password || !role) {
+    Alert.alert('Error', 'Please fill all fields.');
+    return;
+  }
+  setLoading(true);
+  try {
+    await axios.post(`${apiUrl}/api/auth/register`, {
+      name,
+      email,
+      phone,
+      password,
+      role,
+    });
+    // First alert: account created
+    Alert.alert(
+      'Success',
+      'Account created successfully!',
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            // Second alert: free trial info
+            Alert.alert(
+              'Free Trial Started',
+              'Your 7-day free trial has started. Enjoy exploring all features!',
+              [
+                {
+                  text: 'Continue to Sign In',
+                  onPress: () => navigation.navigate('SignIn'),
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
+  } catch (e) {
+    Alert.alert('Error', 'Failed to sign up. Please try again.');
+    console.log("signup error", e);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Tailwind token classes
   const bg = isDark ? 'bg-background-dark' : 'bg-background-light';
